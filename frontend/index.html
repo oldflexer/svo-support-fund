@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фонд "Защитим Родину"</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Hero Section -->
+        <header class="hero">
+            <nav class="navbar">
+                <div class="container">
+                    <div class="nav-brand">
+                        <i class="fas fa-shield-alt logo-icon"></i>
+                        <span class="logo-text">Защитим Родину</span>
+                    </div>
+                    <div class="nav-menu">
+                        <a href="#fighters" @click.prevent="scrollTo('fighters')" class="nav-link">Наши бойцы</a>
+                        <a href="#donate" @click.prevent="scrollTo('donate')" class="nav-link">Помочь</a>
+                        <a href="#needs" @click.prevent="scrollTo('needs')" class="nav-link">Срочные нужды</a>
+                        <a href="#volunteer" @click.prevent="scrollTo('volunteer')" class="nav-link">Волонтёрам</a>
+						<a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Новости</a>
+                        <a href="#about" @click.prevent="scrollTo('about')" class="nav-link">О фонде</a>
+                    </div>
+                    <div class="nav-actions">
+                        <button @click="showDonationModal = true" class="btn-primary">
+                            <i class="fas fa-hand-holding-heart"></i> Поддержать
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="hero-content">
+                <div class="container">
+                    <h1 class="hero-title animate__animated animate__fadeInUp">
+                        Поддержим наших героев вместе
+                    </h1>
+                    <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                        Фонд помощи участникам Специальной Военной Операции.<br>
+                        Обеспечиваем всем необходимым для выполнения боевых задач.
+                    </p>
+                    <div class="hero-stats animate__animated animate__fadeInUp animate__delay-2s">
+                        <div class="stat-item">
+                            <div class="stat-number">{{ stats.total_fighters || '0' }}</div>
+                            <div class="stat-label">Бойцов получили помощь</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ formatCurrency(stats.total_donated) || '0 ₽' }}</div>
+                            <div class="stat-label">Собрано средств</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ stats.total_volunteers || '0' }}</div>
+                            <div class="stat-label">Волонтёров</div>
+                        </div>
+                    </div>
+                    <div class="hero-actions">
+                        <button @click="showDonationModal = true" class="btn-hero btn-primary">
+                            <i class="fas fa-donate"></i> Сделать пожертвование
+                        </button>
+                        <button @click="scrollTo('fighters')" class="btn-hero btn-secondary">
+                            <i class="fas fa-users"></i> Узнать истории
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container">
+            <!-- Срочные потребности -->
+            <section id="needs" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-exclamation-triangle"></i> Срочные потребности
+                </h2>
+                <div class="urgent-needs">
+                    <div v-for="need in urgentNeeds" :key="need.fighter_id + need.need" class="need-card">
+                        <div class="need-urgency">
+                            <i class="fas fa-clock"></i> Срочно
+                        </div>
+                        <div class="need-content">
+                            <h3>{{ need.need }}</h3>
+                            <p>Для {{ need.fighter_call_sign }} • {{ need.region }}</p>
+                            <button @click="donateToFighter(need.fighter_id)" class="btn-small">
+                                Помочь
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Наши бойцы -->
+            <section id="fighters" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-user-shield"></i> Наши защитники
+                </h2>
+                <div class="filters">
+                    <button @click="filterFighters(null)" :class="{active: activeFilter === null}" class="filter-btn">
+                        Все
+                    </button>
+                    <button @click="filterFighters('активный')" :class="{active: activeFilter === 'активный'}" class="filter-btn">
+                        Активные
+                    </button>
+                    <button @click="filterFighters('ранен')" :class="{active: activeFilter === 'ранен'}" class="filter-btn">
+                        Раненые
+                    </button>
+                    <button @click="filterFighters(1)" :class="{active: activeFilter === 1}" class="filter-btn">
+                        Высокий приоритет
+                    </button>
+                </div>
+                
+                <div class="fighters-grid">
+                    <div v-for="fighter in filteredFighters" :key="fighter.id" class="fighter-card">
+                        <div class="fighter-header">
+                            <div class="fighter-status" :class="fighter.status_class">
+                                {{ fighter.status }}
+                            </div>
+                            <div v-if="fighter.is_verified" class="fighter-verified">
+                                <i class="fas fa-check-circle"></i> Проверен
+                            </div>
+                        </div>
+                        <div class="fighter-photo" :style="{backgroundImage: `url(${fighter.photo_url || 'https://images.unsplash.com/photo-1549887552-8d4b0a63a8f5?w=400'})`}">
+                            <div class="fighter-callsign">{{ fighter.call_sign }}</div>
+                        </div>
+                        <div class="fighter-info">
+                            <h3>{{ fighter.call_sign }}</h3>
+                            <p><i class="fas fa-map-marker-alt"></i> {{ fighter.region }}</p>
+                            <p><i class="fas fa-flag"></i> {{ fighter.unit }}</p>
+                            
+                            <div class="fighter-needs">
+                                <h4><i class="fas fa-tools"></i> Нуждается в:</h4>
+                                <ul>
+                                    <li v-for="(need, index) in fighter.needs.slice(0, 3)" :key="index">
+                                        {{ need }}
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div class="fighter-actions">
+                                <button @click="viewFighterDetails(fighter.id)" class="btn-small">
+                                    <i class="fas fa-info-circle"></i> Подробнее
+                                </button>
+                                <button @click="donateToFighter(fighter.id)" class="btn-small btn-primary">
+                                    <i class="fas fa-hand-holding-heart"></i> Поддержать
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Форма пожертвования -->
+            <section id="donate" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-hand-holding-usd"></i> Поддержать фонд
+                </h2>
+                <div class="donation-section">
+                    <div class="donation-info">
+                        <h3>Куда идут ваши средства?</h3>
+                        <ul class="benefits-list">
+                            <li><i class="fas fa-check-circle"></i> Прямая помощь бойцам на передовой</li>
+                            <li><i class="fas fa-check-circle"></i> Закупка современного снаряжения</li>
+                            <li><i class="fas fa-check-circle"></i> Медицинская помощь раненым</li>
+                            <li><i class="fas fa-check-circle"></i> Поддержка семей погибших героев</li>
+                            <li><i class="fas fa-check-circle"></i> Доставка помощи в зону СВО</li>
+                        </ul>
+                        
+                        <div class="donation-tips">
+                            <h4><i class="fas fa-lightbulb"></i> Что можно купить:</h4>
+                            <div class="tip-grid">
+                                <div class="tip-card">
+                                    <div class="tip-amount">5 000 ₽</div>
+                                    <div class="tip-desc">Термобельё для бойца</div>
+                                </div>
+                                <div class="tip-card">
+                                    <div class="tip-amount">15 000 ₽</div>
+                                    <div class="tip-desc">Тактический жгут и аптечка</div>
+                                </div>
+                                <div class="tip-card">
+                                    <div class="tip-amount">50 000 ₽</div>
+                                    <div class="tip-desc">Спутниковый телефон</div>
+                                </div>
+                                <div class="tip-card">
+                                    <div class="tip-amount">300 000 ₽</div>
+                                    <div class="tip-desc">Тепловизионный прицел</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="donation-form-card">
+                        <h3>Форма пожертвования</h3>
+                        <form @submit.prevent="submitDonation" class="donation-form">
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> Ваше имя</label>
+                                <input type="text" v-model="donationForm.name" placeholder="Как к вам обращаться?" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-ruble-sign"></i> Сумма пожертвования</label>
+                                <div class="amount-buttons">
+                                    <button type="button" @click="donationForm.amount = 1000" :class="{active: donationForm.amount == 1000}" class="amount-btn">
+                                        1 000 ₽
+                                    </button>
+                                    <button type="button" @click="donationForm.amount = 5000" :class="{active: donationForm.amount == 5000}" class="amount-btn">
+                                        5 000 ₽
+                                    </button>
+                                    <button type="button" @click="donationForm.amount = 10000" :class="{active: donationForm.amount == 10000}" class="amount-btn">
+                                        10 000 ₽
+                                    </button>
+                                    <div class="amount-custom">
+                                        <input type="number" v-model="donationForm.amount" placeholder="Другая сумма" min="100">
+                                        <span>₽</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-shield-alt"></i> Тип помощи (опционально)</label>
+                                <select v-model="donationForm.assistance_type_id">
+                                    <option value="">Выберите направление</option>
+                                    <option v-for="type in assistanceTypes" :value="type.id">
+                                        {{ type.category_ru }}: {{ type.name }}
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-edit"></i> Ваше сообщение бойцам (опционально)</label>
+                                <textarea v-model="donationForm.message" placeholder="Напишите несколько слов поддержки..." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" v-model="donationForm.is_anonymous">
+                                    <span>Сделать пожертвование анонимно</span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary btn-block" :disabled="donationLoading">
+                                <i class="fas fa-paper-plane"></i> 
+                                {{ donationLoading ? 'Отправка...' : 'Отправить пожертвование' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Волонтёрство -->
+            <section id="volunteer" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-hands-helping"></i> Стать волонтёром
+                </h2>
+                <div class="volunteer-section">
+                    <div class="volunteer-info">
+                        <h3>Как вы можете помочь?</h3>
+                        <div class="volunteer-options">
+                            <div class="volunteer-option">
+                                <i class="fas fa-truck"></i>
+                                <h4>Доставка</h4>
+                                <p>Помощь с транспортировкой грузов в регионы</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-box-open"></i>
+                                <h4>Сбор посылок</h4>
+                                <p>Комплектование и упаковка помощи для бойцов</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-hands"></i>
+                                <h4>Координация</h4>
+                                <p>Помощь в организации сбора средств и вещей</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-laptop"></i>
+                                <h4>Информационная поддержка</h4>
+                                <p>Помощь с сайтом, соцсетями и информированием</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="volunteer-form-card">
+                        <h3>Анкета волонтёра</h3>
+                        <form @submit.prevent="submitVolunteer" class="volunteer-form">
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> ФИО</label>
+                                <input type="text" v-model="volunteerForm.name" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Email</label>
+                                    <input type="email" v-model="volunteerForm.email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-phone"></i> Телефон</label>
+                                    <input type="tel" v-model="volunteerForm.phone">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Город</label>
+                                <input type="text" v-model="volunteerForm.city" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-tools"></i> Ваши навыки и возможности</label>
+                                <textarea v-model="volunteerForm.skills" placeholder="Что вы можете сделать? Есть ли автомобиль? И т.д." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" v-model="volunteerForm.can_deliver">
+                                    <span>Могу участвовать в доставке помощи</span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
+                                <i class="fas fa-user-plus"></i> 
+                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+			
+			<!-- Новости -->
+            <section id="news" class="section">
+                <h2 class="section-title">
+					<i class="fas fa-newspaper"></i> Новости фонда
+                </h2>
+                <div class="news-content">
+                    <div class="news-text">
+                        <h3>Новость 1</h3>
+                        <p>Текст 1</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- О фонде -->
+            <section id="about" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i> О фонде
+                </h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <h3>Фонд "Защитим Родину"</h3>
+                        <p>Мы - группа волонтёров и неравнодушных граждан, объединившихся для поддержки участников Специальной Военной Операции.</p>
+                        
+                        <h4>Наши принципы:</h4>
+                        <ul>
+                            <li><strong>Прозрачность:</strong> Все отчеты о расходовании средств публикуются ежемесячно</li>
+                            <li><strong>Эффективность:</strong> 90% пожертвований идут напрямую на помощь бойцам</li>
+                            <li><strong>Проверенность:</strong> Работаем только с подтвержденными подразделениями и бойцами</li>
+                            <li><strong>Скорость:</strong> Срочные запросы обрабатываем в течение 24 часов</li>
+                        </ul>
+                        
+                        <h4>Контакты:</h4>
+                        <div class="contacts">
+                            <p><i class="fas fa-envelope"></i> mail@mail.ru</p>
+                            <p><i class="fas fa-phone"></i> +7 (800) 555-35-35 (бесплатно по России)</p>
+                            <p><i class="fas fa-map-marker-alt"></i> Москва, ул. Пушкина, д. Колотушкина</p>
+                        </div>
+                    </div>
+                    
+                    <div class="about-stats">
+                        <h4>Наша статистика за 2026 год:</h4>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="stat-number">1,250+</div>
+                                <div class="stat-label">Посылок доставлено</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-ambulance"></i>
+                                </div>
+                                <div class="stat-number">85</div>
+                                <div class="stat-label">Медицинских комплектов</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-satellite-dish"></i>
+                                </div>
+                                <div class="stat-number">42</div>
+                                <div class="stat-label">Единиц техники</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-family"></i>
+                                </div>
+                                <div class="stat-number">120</div>
+                                <div class="stat-label">Семьям оказана помощь</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Футер -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-brand">
+                        <i class="fas fa-shield-alt logo-icon"></i>
+                        <span class="logo-text">Защитим Родину</span>
+                        <p class="footer-slogan">Вместе мы сила. Вместе мы поможем.</p>
+                    </div>
+                    
+                    <div class="footer-links">
+                        <h4>Быстрые ссылки</h4>
+                        <a @click.prevent="scrollTo('fighters')">Наши бойцы</a>
+                        <a @click.prevent="scrollTo('donate')">Сделать пожертвование</a>
+                        <a @click.prevent="scrollTo('volunteer')">Волонтёрство</a>
+						<a @click.prevent="scrollTo('news')">Новости</a>
+                        <a @click.prevent="scrollTo('about')">О фонде</a>
+                    </div>
+                    
+                    <div class="footer-legal">
+                        <h4>Реквизиты фонда</h4>
+                        <p>Фонд "Защитим Родину"</p>
+                        <p>ИНН _</p>
+                        <p>ОГРН _</p>
+                        <p>Все пожертвования идут на уставную деятельность</p>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p>© 2026 Фонд поддержки и развития социально значимых проектов "Защитим Родину". Все права защищены.</p>
+                    <div class="footer-social">
+                        <a href="#" class="social-link"><i class="fab fa-vk"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-telegram"></i></a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Модальное окно пожертвования -->
+        <div v-if="showDonationModal" class="modal-overlay" @click="showDonationModal = false">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h3><i class="fas fa-hand-holding-heart"></i> Поддержать наших защитников</h3>
+                    <button @click="showDonationModal = false" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="submitDonation" class="modal-form">
+                        <div class="form-group">
+                            <label>Ваше имя</label>
+                            <input type="text" v-model="donationForm.name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Сумма пожертвования</label>
+                            <div class="amount-buttons">
+                                <button type="button" @click="donationForm.amount = 500" class="amount-btn">500 ₽</button>
+                                <button type="button" @click="donationForm.amount = 1000" class="amount-btn">1 000 ₽</button>
+                                <button type="button" @click="donationForm.amount = 5000" class="amount-btn">5 000 ₽</button>
+                            </div>
+                            <input type="number" v-model="donationForm.amount" placeholder="Или введите свою сумму" min="100" required>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary btn-block">
+                            Поддержать {{ donationForm.amount }} ₽
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомление -->
+        <div v-if="notification.show" :class="['notification', notification.type]">
+            <i :class="notification.icon"></i>
+            <span>{{ notification.message }}</span>
+            <button @click="notification.show = false" class="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
