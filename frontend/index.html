@@ -9,24 +9,28 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="icon" type="image/x-icon" sizes="48x48" href="img/favicon.ico">
 </head>
 <body>
     <div id="app">
         <!-- Hero Section -->
-        <header class="hero">
+        <header class="hero" id="start">
             <nav class="navbar">
                 <div class="container">
-                    <div class="nav-brand">
-                        <i class="fas fa-shield-alt logo-icon"></i>
+                    <div class="nav-brand" href="#start" @click.prevent="scrollTo('start')">
+                        <!-- <i class="fas fa-shield-alt logo-icon"></i> -->
+                        <img src="img/logo.svg" width="64" height="64">
                         <span class="logo-text">Защитим Родину</span>
                     </div>
                     <div class="nav-menu">
-                        <a href="#fighters" @click.prevent="scrollTo('fighters')" class="nav-link">Наши бойцы</a>
-                        <a href="#donate" @click.prevent="scrollTo('donate')" class="nav-link">Помочь</a>
-                        <a href="#needs" @click.prevent="scrollTo('needs')" class="nav-link">Срочные нужды</a>
-                        <a href="#volunteer" @click.prevent="scrollTo('volunteer')" class="nav-link">Волонтёрам</a>
-						<a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Новости</a>
+                        <a href="#requests" @click.prevent="scrollTo('requests')" class="nav-link">Прием заявок от подразделений</a>
+                        <a href="#needs" @click.prevent="scrollTo('needs')" class="nav-link">Текущие сборы</a>
+                        <a href="#volunteer" @click.prevent="scrollTo('volunteer')" class="nav-link">Ищем партнеров</a>
+                        <a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Фронтовые сводки</a>
                         <a href="#about" @click.prevent="scrollTo('about')" class="nav-link">О фонде</a>
+                        <a href="#contacts" @click.prevent="scrollTo('contacts')" class="nav-link">Контакты</a>
+                        <!-- <a href="#fighters" @click.prevent="scrollTo('fighters')" class="nav-link">Наши бойцы</a>
+                        <a href="#donate" @click.prevent="scrollTo('donate')" class="nav-link">Помочь</a> -->
                     </div>
                     <div class="nav-actions">
                         <button @click="showDonationModal = true" class="btn-primary">
@@ -42,8 +46,14 @@
                         Поддержим наших героев вместе
                     </h1>
                     <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
-                        Фонд помощи участникам Специальной Военной Операции.<br>
-                        Обеспечиваем всем необходимым для выполнения боевых задач.
+                        Фонд содействия в выполнении задач Специальной Военной Операции.<br>
+                    </p>
+                    <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                        Фонд для выполнения подразделениями боевых задач в зоне проведения Специальной Военной Операции<br>
+                        оказывает содействие в поставках БПЛА, станций РЭБ, средств связи, источников электроэнергии, транспортных средств.<br>
+                    </p>
+                    <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                        Фонд оказывает содействие в организации курортно-санаторного лечения участникам СВО, получившим ранения.<br>
                     </p>
                     <div class="hero-stats animate__animated animate__fadeInUp animate__delay-2s">
                         <div class="stat-item">
@@ -60,7 +70,10 @@
                         </div>
                     </div>
                     <div class="hero-actions">
-                        <button @click="showDonationModal = true" class="btn-hero btn-primary">
+                        <!-- <button @click="showDonationModal = true" class="btn-hero btn-primary">
+                            <i class="fas fa-donate"></i> Сделать пожертвование
+                        </button> -->
+                        <button @click.prevent="scrollTo('donate')" class="btn-hero btn-primary">
                             <i class="fas fa-donate"></i> Сделать пожертвование
                         </button>
                         <button @click="scrollTo('fighters')" class="btn-hero btn-secondary">
@@ -73,6 +86,58 @@
 
         <!-- Main Content -->
         <main class="container">
+            <!-- Прием заявок от подразделений -->
+             <section id="requests" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-parachute-box"></i> Прием заявок от подразделений
+                </h2>
+                <div class="requests-section">
+                                        
+                    <div class="requests-form-card">
+                        <h3>Анкета подразделения</h3>
+                        <form @submit.prevent="submitVolunteer" class="requests-form">
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> ФИО</label>
+                                <input type="text" v-model="volunteerForm.name" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Email</label>
+                                    <input type="email" v-model="volunteerForm.email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-phone"></i> Телефон</label>
+                                    <input type="tel" v-model="volunteerForm.phone">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Город</label>
+                                <input type="text" v-model="volunteerForm.city" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-tools"></i> Ваши навыки и возможности</label>
+                                <textarea v-model="volunteerForm.skills" placeholder="Что вы можете сделать? Есть ли автомобиль? И т.д." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" v-model="volunteerForm.can_deliver">
+                                    <span>Могу участвовать в доставке помощи</span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
+                                <i class="fas fa-user-plus"></i> 
+                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
             <!-- Срочные потребности -->
             <section id="needs" class="section">
                 <h2 class="section-title">
@@ -95,7 +160,7 @@
             </section>
 
             <!-- Наши бойцы -->
-            <section id="fighters" class="section">
+            <!-- <section id="fighters" class="section">
                 <h2 class="section-title">
                     <i class="fas fa-user-shield"></i> Наши защитники
                 </h2>
@@ -152,12 +217,175 @@
                         </div>
                     </div>
                 </div>
+            </section> -->
+
+            <!-- Волонтёрство -->
+            <section id="volunteer" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-hands-helping"></i> Стать волонтёром
+                </h2>
+                <div class="volunteer-section">
+                    <div class="volunteer-info">
+                        <h3>Как вы можете помочь?</h3>
+                        <div class="volunteer-options">
+                            <div class="volunteer-option">
+                                <i class="fas fa-truck"></i>
+                                <h4>Доставка</h4>
+                                <p>Помощь с транспортировкой грузов в регионы</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-box-open"></i>
+                                <h4>Сбор посылок</h4>
+                                <p>Комплектование и упаковка помощи для бойцов</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-hands"></i>
+                                <h4>Координация</h4>
+                                <p>Помощь в организации сбора средств и вещей</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-laptop"></i>
+                                <h4>Информационная поддержка</h4>
+                                <p>Помощь с сайтом, соцсетями и информированием</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="volunteer-form-card">
+                        <h3>Анкета волонтёра</h3>
+                        <form @submit.prevent="submitVolunteer" class="volunteer-form">
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> ФИО</label>
+                                <input type="text" v-model="volunteerForm.name" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-envelope"></i> Email</label>
+                                    <input type="email" v-model="volunteerForm.email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fas fa-phone"></i> Телефон</label>
+                                    <input type="tel" v-model="volunteerForm.phone">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Город</label>
+                                <input type="text" v-model="volunteerForm.city" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-tools"></i> Ваши навыки и возможности</label>
+                                <textarea v-model="volunteerForm.skills" placeholder="Что вы можете сделать? Есть ли автомобиль? И т.д." rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" v-model="volunteerForm.can_deliver">
+                                    <span>Могу участвовать в доставке помощи</span>
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
+                                <i class="fas fa-user-plus"></i> 
+                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </section>
+
+            <!-- Новости -->
+            <section id="news" class="section">
+                <h2 class="section-title">
+					<i class="fas fa-newspaper"></i> Новости фонда
+                </h2>
+                <div class="news-content">
+                    <div class="news-text">
+                        <h3>Новость 1</h3>
+                        <p>Текст 1</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- О фонде -->
+            <section id="about" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-info-circle"></i> О фонде
+                </h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <h3>Фонд "Защитим Родину"</h3>
+                        <p>Мы - группа волонтёров и неравнодушных граждан, объединившихся для поддержки участников Специальной Военной Операции.</p>
+                        
+                        <h4>Наши принципы:</h4>
+                        <ul>
+                            <li><strong>Прозрачность:</strong> Все отчеты о расходовании средств публикуются ежемесячно</li>
+                            <li><strong>Эффективность:</strong> 90% пожертвований идут напрямую на помощь бойцам</li>
+                            <li><strong>Проверенность:</strong> Работаем только с подтвержденными подразделениями и бойцами</li>
+                            <li><strong>Скорость:</strong> Срочные запросы обрабатываем в течение 24 часов</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="about-stats">
+                        <h4>Наша статистика за 2026 год:</h4>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="stat-number">1,250+</div>
+                                <div class="stat-label">Посылок доставлено</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-ambulance"></i>
+                                </div>
+                                <div class="stat-number">85</div>
+                                <div class="stat-label">Медицинских комплектов</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-satellite-dish"></i>
+                                </div>
+                                <div class="stat-number">42</div>
+                                <div class="stat-label">Единиц техники</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">
+                                    <i class="fas fa-family"></i>
+                                </div>
+                                <div class="stat-number">120</div>
+                                <div class="stat-label">Семьям оказана помощь</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Контакты -->
+            <section id="contacts" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-phone-volume"></i> Контакты
+                </h2>
+                <div class="contacts-content">
+                    <div class="contacts-text">
+                        <h3>Контакты:</h3>
+                        <div class="contacts">
+                            <p><i class="fas fa-envelope"></i> mail@mail.ru</p>
+                            <p><i class="fas fa-phone"></i> +7 (800) 555-35-35 (бесплатно по России)</p>
+                            <p><i class="fas fa-map-marker-alt"></i> Москва, ул. Пушкина, д. Колотушкина</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
 
             <!-- Форма пожертвования -->
             <section id="donate" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-hand-holding-usd"></i> Поддержать фонд
+                    <i class="fas fa-handshake-simple"></i> Поддержать фонд
                 </h2>
                 <div class="donation-section">
                     <div class="donation-info">
@@ -250,158 +478,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Волонтёрство -->
-            <section id="volunteer" class="section">
-                <h2 class="section-title">
-                    <i class="fas fa-hands-helping"></i> Стать волонтёром
-                </h2>
-                <div class="volunteer-section">
-                    <div class="volunteer-info">
-                        <h3>Как вы можете помочь?</h3>
-                        <div class="volunteer-options">
-                            <div class="volunteer-option">
-                                <i class="fas fa-truck"></i>
-                                <h4>Доставка</h4>
-                                <p>Помощь с транспортировкой грузов в регионы</p>
-                            </div>
-                            <div class="volunteer-option">
-                                <i class="fas fa-box-open"></i>
-                                <h4>Сбор посылок</h4>
-                                <p>Комплектование и упаковка помощи для бойцов</p>
-                            </div>
-                            <div class="volunteer-option">
-                                <i class="fas fa-hands"></i>
-                                <h4>Координация</h4>
-                                <p>Помощь в организации сбора средств и вещей</p>
-                            </div>
-                            <div class="volunteer-option">
-                                <i class="fas fa-laptop"></i>
-                                <h4>Информационная поддержка</h4>
-                                <p>Помощь с сайтом, соцсетями и информированием</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="volunteer-form-card">
-                        <h3>Анкета волонтёра</h3>
-                        <form @submit.prevent="submitVolunteer" class="volunteer-form">
-                            <div class="form-group">
-                                <label><i class="fas fa-user"></i> ФИО</label>
-                                <input type="text" v-model="volunteerForm.name" required>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fas fa-envelope"></i> Email</label>
-                                    <input type="email" v-model="volunteerForm.email" required>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fas fa-phone"></i> Телефон</label>
-                                    <input type="tel" v-model="volunteerForm.phone">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Город</label>
-                                <input type="text" v-model="volunteerForm.city" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label><i class="fas fa-tools"></i> Ваши навыки и возможности</label>
-                                <textarea v-model="volunteerForm.skills" placeholder="Что вы можете сделать? Есть ли автомобиль? И т.д." rows="3"></textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" v-model="volunteerForm.can_deliver">
-                                    <span>Могу участвовать в доставке помощи</span>
-                                </label>
-                            </div>
-                            
-                            <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
-                                <i class="fas fa-user-plus"></i> 
-                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-			
-			<!-- Новости -->
-            <section id="news" class="section">
-                <h2 class="section-title">
-					<i class="fas fa-newspaper"></i> Новости фонда
-                </h2>
-                <div class="news-content">
-                    <div class="news-text">
-                        <h3>Новость 1</h3>
-                        <p>Текст 1</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- О фонде -->
-            <section id="about" class="section">
-                <h2 class="section-title">
-                    <i class="fas fa-info-circle"></i> О фонде
-                </h2>
-                <div class="about-content">
-                    <div class="about-text">
-                        <h3>Фонд "Защитим Родину"</h3>
-                        <p>Мы - группа волонтёров и неравнодушных граждан, объединившихся для поддержки участников Специальной Военной Операции.</p>
-                        
-                        <h4>Наши принципы:</h4>
-                        <ul>
-                            <li><strong>Прозрачность:</strong> Все отчеты о расходовании средств публикуются ежемесячно</li>
-                            <li><strong>Эффективность:</strong> 90% пожертвований идут напрямую на помощь бойцам</li>
-                            <li><strong>Проверенность:</strong> Работаем только с подтвержденными подразделениями и бойцами</li>
-                            <li><strong>Скорость:</strong> Срочные запросы обрабатываем в течение 24 часов</li>
-                        </ul>
-                        
-                        <h4>Контакты:</h4>
-                        <div class="contacts">
-                            <p><i class="fas fa-envelope"></i> mail@mail.ru</p>
-                            <p><i class="fas fa-phone"></i> +7 (800) 555-35-35 (бесплатно по России)</p>
-                            <p><i class="fas fa-map-marker-alt"></i> Москва, ул. Пушкина, д. Колотушкина</p>
-                        </div>
-                    </div>
-                    
-                    <div class="about-stats">
-                        <h4>Наша статистика за 2026 год:</h4>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-box"></i>
-                                </div>
-                                <div class="stat-number">1,250+</div>
-                                <div class="stat-label">Посылок доставлено</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-ambulance"></i>
-                                </div>
-                                <div class="stat-number">85</div>
-                                <div class="stat-label">Медицинских комплектов</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-satellite-dish"></i>
-                                </div>
-                                <div class="stat-number">42</div>
-                                <div class="stat-label">Единиц техники</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-family"></i>
-                                </div>
-                                <div class="stat-number">120</div>
-                                <div class="stat-label">Семьям оказана помощь</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </main>
 
         <!-- Футер -->
@@ -409,7 +485,8 @@
             <div class="container">
                 <div class="footer-content">
                     <div class="footer-brand">
-                        <i class="fas fa-shield-alt logo-icon"></i>
+                        <!-- <i class="fas fa-shield-alt logo-icon"></i> -->
+                        <img src="img/logo.svg" width="64" height="64">
                         <span class="logo-text">Защитим Родину</span>
                         <p class="footer-slogan">Вместе мы сила. Вместе мы поможем.</p>
                     </div>

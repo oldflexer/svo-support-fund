@@ -30,33 +30,36 @@ body {
 }
 
 .container {
-    max-width: 1280px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px;
+    gap: 3rem;
 }
 
 /* Навигация */
 .navbar {
     background: rgba(26, 54, 93, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 1rem 0;
+    backdrop-filter: blur(1px);
+    padding: 1rem;
     position: fixed;
     width: 100%;
     top: 0;
     z-index: 1000;
-    border-bottom: 2px solid var(--secondary);
+    border-bottom: 3px solid var(--secondary);
 }
 
 .navbar .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 2rem;
 }
 
 .nav-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 1rem;
+    cursor: pointer;
 }
 
 .logo-icon {
@@ -66,22 +69,32 @@ body {
 
 .logo-text {
     font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
+    font-weight: 900;
     font-size: 1.5rem;
     color: white;
+    width: 50%;
+    line-height: 1.25;
 }
 
 .nav-menu {
     display: flex;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.33rem;
 }
 
 .nav-link {
+    width: 10rem;
+    height: 4rem;
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 1rem;
     color: white;
     text-decoration: none;
     font-weight: 500;
     transition: var(--transition);
-    padding: 0.5rem 1rem;
+    padding: 0.33rem 0.67rem;
     border-radius: var(--border-radius);
 }
 
@@ -201,7 +214,7 @@ body {
 }
 
 /* Карточки бойцов */
-.filters {
+/* .filters {
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
@@ -375,6 +388,44 @@ body {
     background: var(--secondary);
     border-color: var(--secondary);
     color: white;
+} */
+
+/* Прием заявок от подразделений */
+.requests-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.requests-option {
+    text-align: center;
+    padding: 1.5rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.requests-option i {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.requests-option h4 {
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: auto;
 }
 
 /* Срочные потребности */
@@ -419,7 +470,7 @@ body {
 }
 
 /* Формы */
-.donation-section, .volunteer-section {
+.donation-section, .volunteer-section, .requests-section {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
@@ -427,12 +478,12 @@ body {
 }
 
 @media (max-width: 768px) {
-    .donation-section, .volunteer-section {
+    .donation-section, .volunteer-section, .requests-section {
         grid-template-columns: 1fr;
     }
 }
 
-.donation-form-card, .volunteer-form-card {
+.donation-form-card, .volunteer-form-card, .requests-form-card {
     background: white;
     padding: 2rem;
     border-radius: var(--border-radius);
@@ -910,6 +961,7 @@ body {
     
     .tip-grid,
     .volunteer-options,
+    .requests-options,
     .stats-grid {
         grid-template-columns: 1fr;
     }

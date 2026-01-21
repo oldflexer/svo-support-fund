@@ -2,10 +2,11 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import jwt
 from schemas import validate_request, validate_request_data, SCHEMAS
 from marshmallow import ValidationError
 from middleware import validate_json, validate_query_params
-from models import db, bcrypt, AdminUser, Fighter, AssistanceType, Donation, Volunteer, Delivery, AuditLog
+from models import db, bcrypt, AdminUser, Fighter, AssistanceType, Donation, Volunteer, Delivery, AuditLog, EquipmentRequest
 from two_factor import TwoFactorAuth, require_2fa_setup, require_2fa_enabled
 from config import Config
 from auth import (
@@ -560,7 +561,7 @@ def login():
         refresh_token = create_refresh_token(user.id)
         
         # Очищаем неудачные попытки
-        TwoFactorAuth.clear_failed_attempts(username)
+        TwoFactorAuth.clear_failed_attempts(user.username)
         
         # Логируем успешный вход
         log_audit('login', 'user', user.id, 'Logged in without 2FA')
