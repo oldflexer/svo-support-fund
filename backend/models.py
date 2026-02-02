@@ -121,23 +121,33 @@ class FailedLoginAttempt(db.Model):
     user_agent = db.Column(db.Text)
     attempted_at = db.Column(db.DateTime, default=datetime.utcnow)
     reason = db.Column(db.String(100))  # 'wrong_password', '2fa_failed', etc.
-        
-class Fighter(db.Model):
-    """Боец/участник СВО"""
-    id = db.Column(db.Integer, primary_key=True)
-    call_sign = db.Column(db.String(100), nullable=False)
-    unit = db.Column(db.String(200))
-    region = db.Column(db.String(100))
-    status = db.Column(db.String(50))  # 'активный', 'ранен', 'на лечении'
-    needs = db.Column(db.Text)  # JSON строка с потребностями
-    story = db.Column(db.Text)
-    photo_url = db.Column(db.String(300))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    is_verified = db.Column(db.Boolean, default=False)
-    priority = db.Column(db.Integer, default=1)  # 1-высокий, 2-средний, 3-низкий
-    
-    donations = db.relationship('Donation', backref='fighter', lazy=True)
 
+class UnitRequest(db.Model):
+    """Заявки от подразделений"""
+    id = db.Column(db.Integer, primary_key=True)
+    unit_name = db.Column(db.String(200), nullable=False)  # Название подразделения
+    unit_commander = db.Column(db.String(150), nullable=False)  # Командир подразделения
+    contact_person = db.Column(db.String(150), nullable=False)  # Контактное лицо
+    phone = db.Column(db.String(20), nullable=False)  # Контактный телефон
+    email = db.Column(db.String(120))  # Email
+    region = db.Column(db.String(100), nullable=False)  # Регион дислокации
+    needs = db.Column(db.Text, nullable=False)  # JSON с потребностями
+    urgency = db.Column(db.String(50), default='обычно')  # Срочность
+    quantity = db.Column(db.Integer, nullable=False)  # Количество бойцов
+    additional_info = db.Column(db.Text)  # Дополнительная информация
+    status = db.Column(db.String(50), default='новая')  # Статус: новая, в обработке, выполнена, отклонена
+    verification_status = db.Column(db.String(50), default='не проверена')  # Статус проверки
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    
+    # Связь с администратором, который обрабатывает заявку
+    assigned_admin_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
+    assigned_admin = db.relationship('AdminUser', backref='unit_requests')
+    
+    # Связь с пожертвованиями, которые идут на эту заявку
+    donation_id = db.Column(db.Integer, db.ForeignKey('donation.id'))
+    donation = db.relationship('Donation', backref='unit_request', lazy=True)
+        
 class AssistanceType(db.Model):
     """Типы помощи"""
     id = db.Column(db.Integer, primary_key=True)
@@ -151,7 +161,6 @@ class Donation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     donor_name = db.Column(db.String(100))
     amount = db.Column(db.Float, nullable=False)
-    fighter_id = db.Column(db.Integer, db.ForeignKey('fighter.id'))
     assistance_type_id = db.Column(db.Integer, db.ForeignKey('assistance_type.id'))
     message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -163,7 +172,6 @@ class Donation(db.Model):
 class EquipmentRequest(db.Model):
     """Запросы на снаряжение"""
     id = db.Column(db.Integer, primary_key=True)
-    fighter_id = db.Column(db.Integer, db.ForeignKey('fighter.id'), nullable=False)
     item_name = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, default=1)
     urgency = db.Column(db.String(50))  # 'критично', 'срочно', 'обычно'
@@ -191,13 +199,48 @@ class Delivery(db.Model):
     departure_date = db.Column(db.DateTime)
     estimated_arrival = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class NewsArticle(db.Model):
+    """Новости и фронтовые сводки"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
+    excerpt = db.Column(db.Text)
+    content = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), default='новости')  # новости, сводка, отчёт, история
+    author = db.Column(db.String(100))
+    source = db.Column(db.String(200))  # Источник информации
+    region = db.Column(db.String(100))  # Регион к которому относится новость
+    is_published = db.Column(db.Boolean, default=False)
+    is_verified = db.Column(db.Boolean, default=False)
+    is_featured = db.Column(db.Boolean, default=False)  # Важная новость
+    views_count = db.Column(db.Integer, default=0)
+    published_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    
+    # Связи
+    tags = db.Column(db.Text)  # JSON список тегов
+    images = db.relationship('NewsImage', backref='article', lazy=True)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
+    created_by = db.relationship('AdminUser', backref='news_articles')
+
+class NewsImage(db.Model):
+    """Изображения для новостей"""
+    id = db.Column(db.Integer, primary_key=True)
+    article_id = db.Column(db.Integer, db.ForeignKey('news_article.id'), nullable=False)
+    image_url = db.Column(db.String(300), nullable=False)
+    caption = db.Column(db.String(200))
+    is_main = db.Column(db.Boolean, default=False)
+    order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
 class AuditLog(db.Model):
     """Лог действий администраторов"""
     id = db.Column(db.Integer, primary_key=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
     action = db.Column(db.String(100), nullable=False)  # 'login', 'create', 'update', 'delete'
-    entity_type = db.Column(db.String(50))  # 'fighter', 'donation', 'user', etc.
+    entity_type = db.Column(db.String(50))  # 'unit', 'donation', 'user', etc.
     entity_id = db.Column(db.Integer)
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(45))

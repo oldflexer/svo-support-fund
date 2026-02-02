@@ -3,18 +3,28 @@ const { createApp, ref, computed, onMounted } = Vue;
 createApp({
     setup() {
         // Основные состояния
-        const fighters = ref([]);
         const assistanceTypes = ref([]);
-        const urgentNeeds = ref([]);
         const stats = ref({});
-        const activeFilter = ref(null);
+
         const showDonationModal = ref(false);
+
+        const currentDrives = ref([]);
+        const driveFilter = ref(null);
+
+        // Добавляем состояния для новостей
+        const news = ref({
+            articles: [],
+            total: 0,
+            pages: 1,
+            currentPage: 1
+        });
+        const featuredArticle = ref(null);
+        const newsFilter = ref(null);
         
         // Формы
         const donationForm = ref({
             name: '',
             amount: 1000,
-            fighter_id: null,
             assistance_type_id: null,
             message: '',
             is_anonymous: false
@@ -44,43 +54,21 @@ createApp({
         // API базовый URL
         const API_URL = 'http://localhost:5000';
         
-        // Отфильтрованные бойцы
-        const filteredFighters = computed(() => {
-            if (!activeFilter.value) return fighters.value;
-            
-            if (typeof activeFilter.value === 'string') {
-                return fighters.value.filter(f => f.status === activeFilter.value);
-            } else {
-                return fighters.value.filter(f => f.priority === activeFilter.value);
-            }
-        });
-        
         // Методы
         const fetchData = async () => {
-            try {
-                // Загружаем бойцов
-                const fightersResponse = await fetch(`${API_URL}/api/fighters`);
-                fighters.value = await fightersResponse.json();
-                
+            try {                
                 // Загружаем типы помощи
                 const typesResponse = await fetch(`${API_URL}/api/assistance/types`);
                 assistanceTypes.value = await typesResponse.json();
                 
-                // Загружаем срочные потребности
-                const needsResponse = await fetch(`${API_URL}/api/needs/urgent`);
-                urgentNeeds.value = await needsResponse.json();
-                
                 // Загружаем статистику
                 const statsResponse = await fetch(`${API_URL}/api/stats`);
                 stats.value = await statsResponse.json();
+
             } catch (error) {
                 showNotification('Ошибка загрузки данных', 'error');
                 console.error('Ошибка:', error);
             }
-        };
-        
-        const filterFighters = (filter) => {
-            activeFilter.value = filter;
         };
         
         const scrollTo = (elementId) => {
@@ -88,12 +76,6 @@ createApp({
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth' });
             }
-        };
-        
-        const donateToFighter = (fighterId) => {
-            donationForm.value.fighter_id = fighterId;
-            showDonationModal.value = true;
-            scrollTo('donate');
         };
         
         const submitDonation = async () => {
@@ -120,7 +102,6 @@ createApp({
                     donationForm.value = {
                         name: '',
                         amount: 1000,
-                        fighter_id: null,
                         assistance_type_id: null,
                         message: '',
                         is_anonymous: false
@@ -175,11 +156,6 @@ createApp({
             }
         };
         
-        const viewFighterDetails = (fighterId) => {
-            // В реальном приложении здесь будет переход на страницу бойца
-            showNotification('Страница бойца будет реализована в следующей версии', 'success');
-        };
-        
         const showNotification = (message, type = 'success') => {
             notification.value = {
                 show: true,
@@ -198,10 +174,121 @@ createApp({
             if (!amount) return '0 ₽';
             return new Intl.NumberFormat('ru-RU').format(amount) + ' ₽';
         };
+
+        const fetchCurrentDrives = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/unit-requests/public`);
+                currentDrives.value = await response.json();
+            } catch (error) {
+                console.error('Error fetching current drives:', error);
+            }
+        };
+
+        const setDriveFilter = (filter) => {
+            driveFilter.value = filter;
+        };
+
+        const filteredDrives = computed(() => {
+            if (!driveFilter.value) return currentDrives.value;
+            return currentDrives.value.filter(drive => drive.urgency === driveFilter.value);
+        });
+
+        const getUrgencyIcon = (urgency) => {
+            const icons = {
+                'критично': 'fas fa-exclamation-triangle',
+                'срочно': 'fas fa-exclamation-circle',
+                'обычно': 'fas fa-info-circle'
+            };
+            return icons[urgency] || 'fas fa-info-circle';
+        };
+
+        const getUrgencyText = (urgency) => {
+            const texts = {
+                'критично': 'Критично',
+                'срочно': 'Срочно',
+                'обычно': 'Обычно'
+            };
+            return texts[urgency] || 'Обычно';
+        };
+
+        const showDonationForDrive = (driveId) => {
+            donationForm.value.unit_request_id = driveId;
+            showDonationModal.value = true;
+        };
+
+        const viewDriveDetails = (driveId) => {
+            // Здесь будет реализация просмотра деталей сбора
+            showNotification('Функция просмотра деталей сбора будет реализована в следующей версии', 'info');
+        };
+
+        // Добавляем методы для новостей
+        const fetchNews = async (page = 1) => {
+            try {
+                let url = `${API_URL}/api/news?page=${page}&limit=6`;
+                if (newsFilter.value) {
+                    url += `&category=${newsFilter.value}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (page === 1) {
+                    news.value = data;
+                    // Находим featured статью
+                    featuredArticle.value = data.articles.find(article => article.is_featured) || data.articles[0];
+                    // Убираем featured из основного списка
+                    if (featuredArticle.value) {
+                        news.value.articles = data.articles.filter(article => article.id !== featuredArticle.value.id);
+                    }
+                } else {
+                    news.value.articles = [...news.value.articles, ...data.articles];
+                    news.value.total = data.total;
+                    news.value.pages = data.pages;
+                    news.value.currentPage = page;
+                }
+            } catch (error) {
+                console.error('Error fetching news:', error);
+            }
+        };
+
+        const loadMoreNews = () => {
+            if (news.value.currentPage < news.value.pages) {
+                fetchNews(news.value.currentPage + 1);
+            }
+        };
+
+        const setNewsFilter = (category) => {
+            newsFilter.value = category;
+            fetchNews(1); // Загружаем первую страницу с новым фильтром
+        };
+
+        const filteredNews = computed(() => {
+            return news.value.articles;
+        });
+
+        const getCategoryName = (category) => {
+            const names = {
+                'новости': 'Новости фонда',
+                'сводка': 'Фронтовые сводки',
+                'отчёт': 'Отчёты о помощи',
+                'история': 'Истории бойцов'
+            };
+            return names[category] || category;
+        };
+
+        const viewArticle = (slug) => {
+            // Здесь будет реализация просмотра статьи
+            // Можно открыть в модальном окне или на отдельной странице
+            window.open(`${API_URL}/api/news/${slug}`, '_blank');
+            // Или показать уведомление
+            showNotification('Функция просмотра статьи будет реализована в следующей версии', 'info');
+        };
         
         // Инициализация при загрузке
         onMounted(() => {
             fetchData();
+            fetchCurrentDrives();
+            fetchNews();
             
             // Плавная прокрутка для якорных ссылок
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -222,11 +309,8 @@ createApp({
         
         return {
             // Состояния
-            fighters,
             assistanceTypes,
-            urgentNeeds,
             stats,
-            activeFilter,
             showDonationModal,
             donationForm,
             volunteerForm,
@@ -235,17 +319,24 @@ createApp({
             notification,
             
             // Computed
-            filteredFighters,
+            filteredDrives,
+            filteredNews,
             
             // Методы
-            filterFighters,
             scrollTo,
-            donateToFighter,
             submitDonation,
             submitVolunteer,
-            viewFighterDetails,
             showNotification,
-            formatCurrency
+            formatCurrency,
+            setDriveFilter,
+            getUrgencyIcon,
+            getUrgencyText,
+            showDonationForDrive,
+            viewDriveDetails,
+            loadMoreNews,
+            setNewsFilter,
+            getCategoryName,
+            viewArticle
         };
     }
 }).mount('#app');

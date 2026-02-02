@@ -29,8 +29,7 @@
                         <a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Фронтовые сводки</a>
                         <a href="#about" @click.prevent="scrollTo('about')" class="nav-link">О фонде</a>
                         <a href="#contacts" @click.prevent="scrollTo('contacts')" class="nav-link">Контакты</a>
-                        <!-- <a href="#fighters" @click.prevent="scrollTo('fighters')" class="nav-link">Наши бойцы</a>
-                        <a href="#donate" @click.prevent="scrollTo('donate')" class="nav-link">Помочь</a> -->
+                        <a href="#donate" @click.prevent="scrollTo('donate')" class="nav-link">Помочь</a>
                     </div>
                     <div class="nav-actions">
                         <button @click="showDonationModal = true" class="btn-primary">
@@ -57,7 +56,7 @@
                     </p>
                     <div class="hero-stats animate__animated animate__fadeInUp animate__delay-2s">
                         <div class="stat-item">
-                            <div class="stat-number">{{ stats.total_fighters || '0' }}</div>
+                            <div class="stat-number">{{ stats.total_units || '0' }}</div>
                             <div class="stat-label">Бойцов получили помощь</div>
                         </div>
                         <div class="stat-item">
@@ -76,8 +75,8 @@
                         <button @click.prevent="scrollTo('donate')" class="btn-hero btn-primary">
                             <i class="fas fa-donate"></i> Сделать пожертвование
                         </button>
-                        <button @click="scrollTo('fighters')" class="btn-hero btn-secondary">
-                            <i class="fas fa-users"></i> Узнать истории
+                        <button @click="scrollTo('current-drives')" class="btn-hero btn-secondary">
+                            <i class="fas fa-users"></i> Текущие потребности
                         </button>
                     </div>
                 </div>
@@ -86,8 +85,99 @@
 
         <!-- Main Content -->
         <main class="container">
+            <!-- Текущие сборы -->
+            <section id="current-drives" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-hand-holding-heart"></i> Текущие сборы
+                </h2>
+                
+                <div class="drives-filters">
+                    <button @click="setDriveFilter(null)" :class="{active: driveFilter === null}" class="filter-btn">
+                        Все сборы
+                    </button>
+                    <button @click="setDriveFilter('критично')" :class="{active: driveFilter === 'критично'}" class="filter-btn">
+                        Критические
+                    </button>
+                    <button @click="setDriveFilter('срочно')" :class="{active: driveFilter === 'срочно'}" class="filter-btn">
+                        Срочные
+                    </button>
+                    <button @click="setDriveFilter('обычно')" :class="{active: driveFilter === 'обычно'}" class="filter-btn">
+                        Обычные
+                    </button>
+                </div>
+                
+                <div class="current-drives">
+                    <div v-for="drive in filteredDrives" :key="drive.id" class="drive-card">
+                        <div class="drive-header" :class="drive.urgency_class">
+                            <div class="drive-urgency">
+                                <i :class="getUrgencyIcon(drive.urgency)"></i> {{ getUrgencyText(drive.urgency) }}
+                            </div>
+                            <div class="drive-status">
+                                {{ drive.status }}
+                            </div>
+                        </div>
+                        
+                        <div class="drive-content">
+                            <h3>{{ drive.unit_name }}</h3>
+                            <div class="drive-meta">
+                                <span class="region">
+                                    <i class="fas fa-map-marker-alt"></i> {{ drive.region }}
+                                </span>
+                                <span class="quantity">
+                                    <i class="fas fa-users"></i> {{ drive.quantity }} бойцов
+                                </span>
+                            </div>
+                            
+                            <div class="drive-needs">
+                                <h4><i class="fas fa-tools"></i> Необходимо:</h4>
+                                <ul>
+                                    <li v-for="(need, index) in drive.needs.slice(0, 3)" :key="index">
+                                        {{ need }}
+                                    </li>
+                                    <li v-if="drive.needs.length > 3" class="more-items">
+                                        и ещё {{ drive.needs.length - 3 }} позиций...
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div class="drive-progress">
+                                <div class="progress-info">
+                                    <div class="progress-amounts">
+                                        <span class="collected">{{ formatCurrency(drive.progress.collected) }}</span>
+                                        <span class="needed">из {{ formatCurrency(drive.progress.needed) }}</span>
+                                    </div>
+                                    <div class="progress-percentage">
+                                        {{ drive.progress.percentage }}%
+                                    </div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" :style="{width: drive.progress.percentage + '%'}"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="drive-actions">
+                                <button @click="showDonationForDrive(drive.id)" class="btn-small btn-primary">
+                                    <i class="fas fa-donate"></i> Поддержать сбор
+                                </button>
+                                <button @click="viewDriveDetails(drive.id)" class="btn-small">
+                                    <i class="fas fa-info-circle"></i> Подробнее
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="filteredDrives.length === 0" class="no-drives">
+                    <i class="fas fa-inbox"></i>
+                    <h3>Нет активных сборов</h3>
+                    <p>В данный момент нет активных сборов. Проверьте позже или создайте заявку от подразделения.</p>
+                </div>
+            </section>
+
+            
+
             <!-- Прием заявок от подразделений -->
-             <section id="requests" class="section">
+            <section id="requests" class="section">
                 <h2 class="section-title">
                     <i class="fas fa-parachute-box"></i> Прием заявок от подразделений
                 </h2>
@@ -138,86 +228,95 @@
                 </div>
             </section>
 
-            <!-- Срочные потребности -->
-            <section id="needs" class="section">
+            <!-- Новости -->
+            <section id="news" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-exclamation-triangle"></i> Срочные потребности
+                    <i class="fas fa-newspaper"></i> Новости и фронтовые сводки
                 </h2>
-                <div class="urgent-needs">
-                    <div v-for="need in urgentNeeds" :key="need.fighter_id + need.need" class="need-card">
-                        <div class="need-urgency">
-                            <i class="fas fa-clock"></i> Срочно
-                        </div>
-                        <div class="need-content">
-                            <h3>{{ need.need }}</h3>
-                            <p>Для {{ need.fighter_call_sign }} • {{ need.region }}</p>
-                            <button @click="donateToFighter(need.fighter_id)" class="btn-small">
-                                Помочь
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Наши бойцы -->
-            <!-- <section id="fighters" class="section">
-                <h2 class="section-title">
-                    <i class="fas fa-user-shield"></i> Наши защитники
-                </h2>
-                <div class="filters">
-                    <button @click="filterFighters(null)" :class="{active: activeFilter === null}" class="filter-btn">
+                
+                <div class="news-filters">
+                    <button @click="setNewsFilter(null)" :class="{active: newsFilter === null}" class="filter-btn">
                         Все
                     </button>
-                    <button @click="filterFighters('активный')" :class="{active: activeFilter === 'активный'}" class="filter-btn">
-                        Активные
+                    <button @click="setNewsFilter('новости')" :class="{active: newsFilter === 'новости'}" class="filter-btn">
+                        Новости фонда
                     </button>
-                    <button @click="filterFighters('ранен')" :class="{active: activeFilter === 'ранен'}" class="filter-btn">
-                        Раненые
+                    <button @click="setNewsFilter('сводка')" :class="{active: newsFilter === 'сводка'}" class="filter-btn">
+                        Фронтовые сводки
                     </button>
-                    <button @click="filterFighters(1)" :class="{active: activeFilter === 1}" class="filter-btn">
-                        Высокий приоритет
+                    <button @click="setNewsFilter('отчёт')" :class="{active: newsFilter === 'отчёт'}" class="filter-btn">
+                        Отчёты о помощи
+                    </button>
+                    <button @click="setNewsFilter('история')" :class="{active: newsFilter === 'история'}" class="filter-btn">
+                        Истории
                     </button>
                 </div>
                 
-                <div class="fighters-grid">
-                    <div v-for="fighter in filteredFighters" :key="fighter.id" class="fighter-card">
-                        <div class="fighter-header">
-                            <div class="fighter-status" :class="fighter.status_class">
-                                {{ fighter.status }}
-                            </div>
-                            <div v-if="fighter.is_verified" class="fighter-verified">
-                                <i class="fas fa-check-circle"></i> Проверен
+                <div class="news-grid">
+                    <!-- Главная новость (featured) -->
+                    <div v-if="featuredArticle" class="featured-article" @click="viewArticle(featuredArticle.slug)">
+                        <div class="featured-image" :style="{backgroundImage: `url(${featuredArticle.main_image || 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=800'})`}">
+                            <div class="featured-overlay">
+                                <div class="featured-category">{{ getCategoryName(featuredArticle.category) }}</div>
+                                <div v-if="featuredArticle.is_verified" class="featured-verified">
+                                    <i class="fas fa-check-circle"></i> Проверено
+                                </div>
                             </div>
                         </div>
-                        <div class="fighter-photo" :style="{backgroundImage: `url(${fighter.photo_url || 'https://images.unsplash.com/photo-1549887552-8d4b0a63a8f5?w=400'})`}">
-                            <div class="fighter-callsign">{{ fighter.call_sign }}</div>
-                        </div>
-                        <div class="fighter-info">
-                            <h3>{{ fighter.call_sign }}</h3>
-                            <p><i class="fas fa-map-marker-alt"></i> {{ fighter.region }}</p>
-                            <p><i class="fas fa-flag"></i> {{ fighter.unit }}</p>
-                            
-                            <div class="fighter-needs">
-                                <h4><i class="fas fa-tools"></i> Нуждается в:</h4>
-                                <ul>
-                                    <li v-for="(need, index) in fighter.needs.slice(0, 3)" :key="index">
-                                        {{ need }}
-                                    </li>
-                                </ul>
+                        <div class="featured-content">
+                            <h3>{{ featuredArticle.title }}</h3>
+                            <p class="featured-excerpt">{{ featuredArticle.excerpt }}</p>
+                            <div class="featured-meta">
+                                <span class="meta-item">
+                                    <i class="far fa-calendar"></i> {{ featuredArticle.published_at }}
+                                </span>
+                                <span class="meta-item">
+                                    <i class="far fa-clock"></i> {{ featuredArticle.read_time }} мин. чтения
+                                </span>
+                                <span class="meta-item">
+                                    <i class="far fa-eye"></i> {{ featuredArticle.views_count }}
+                                </span>
                             </div>
-                            
-                            <div class="fighter-actions">
-                                <button @click="viewFighterDetails(fighter.id)" class="btn-small">
-                                    <i class="fas fa-info-circle"></i> Подробнее
-                                </button>
-                                <button @click="donateToFighter(fighter.id)" class="btn-small btn-primary">
-                                    <i class="fas fa-hand-holding-heart"></i> Поддержать
-                                </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Остальные новости -->
+                    <div v-for="article in filteredNews" :key="article.id" class="news-card" @click="viewArticle(article.slug)">
+                        <div class="news-image" :style="{backgroundImage: `url(${article.main_image || 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w-400'})`}">
+                            <div class="news-category">{{ getCategoryName(article.category) }}</div>
+                        </div>
+                        <div class="news-content">
+                            <h4>{{ article.title }}</h4>
+                            <p class="news-excerpt">{{ article.excerpt }}</p>
+                            <div class="news-meta">
+                                <span class="meta-item">
+                                    <i class="far fa-calendar"></i> {{ article.published_at }}
+                                </span>
+                                <span v-if="article.region" class="meta-item">
+                                    <i class="fas fa-map-marker-alt"></i> {{ article.region }}
+                                </span>
+                            </div>
+                            <div class="news-tags">
+                                <span v-for="tag in article.tags.slice(0, 2)" :key="tag" class="tag">
+                                    {{ tag }}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section> -->
+                
+                <!-- <div class="news-load-more" v-if="news.total > news.articles.length">
+                    <button @click="loadMoreNews" class="btn-secondary">
+                        <i class="fas fa-plus"></i> Загрузить ещё новости
+                    </button>
+                </div>
+                
+                <div v-if="news.articles.length === 0" class="no-news">
+                    <i class="fas fa-newspaper"></i>
+                    <h3>Новостей пока нет</h3>
+                    <p>Следите за обновлениями, скоро появятся свежие новости и сводки.</p>
+                </div> -->
+            </section>
 
             <!-- Волонтёрство -->
             <section id="volunteer" class="section">
@@ -296,19 +395,6 @@
                 </div>
             </section>
 
-            <!-- Новости -->
-            <section id="news" class="section">
-                <h2 class="section-title">
-					<i class="fas fa-newspaper"></i> Новости фонда
-                </h2>
-                <div class="news-content">
-                    <div class="news-text">
-                        <h3>Новость 1</h3>
-                        <p>Текст 1</p>
-                    </div>
-                </div>
-            </section>
-
             <!-- О фонде -->
             <section id="about" class="section">
                 <h2 class="section-title">
@@ -381,11 +467,10 @@
                 </div>
             </section>
 
-
             <!-- Форма пожертвования -->
             <section id="donate" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-handshake-simple"></i> Поддержать фонд
+                    <i class="fas fa-hand-holding-usd"></i> Поддержать фонд
                 </h2>
                 <div class="donation-section">
                     <div class="donation-info">
@@ -411,7 +496,7 @@
                                 </div>
                                 <div class="tip-card">
                                     <div class="tip-amount">50 000 ₽</div>
-                                    <div class="tip-desc">Спутниковый телефон</div>
+                                    <div class="tip-desc">Спутниковый телефон на неделю</div>
                                 </div>
                                 <div class="tip-card">
                                     <div class="tip-amount">300 000 ₽</div>
@@ -493,7 +578,6 @@
                     
                     <div class="footer-links">
                         <h4>Быстрые ссылки</h4>
-                        <a @click.prevent="scrollTo('fighters')">Наши бойцы</a>
                         <a @click.prevent="scrollTo('donate')">Сделать пожертвование</a>
                         <a @click.prevent="scrollTo('volunteer')">Волонтёрство</a>
 						<a @click.prevent="scrollTo('news')">Новости</a>

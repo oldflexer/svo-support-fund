@@ -2,3 +2,4 @@ backend/__pycache__/
 backend/instance/svo_fund.db
 backend/venv/
 instance/svo_fund.db
+svo_support_fund.code-workspace

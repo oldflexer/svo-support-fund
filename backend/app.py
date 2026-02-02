@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -6,7 +6,7 @@ import jwt
 from schemas import validate_request, validate_request_data, SCHEMAS
 from marshmallow import ValidationError
 from middleware import validate_json, validate_query_params
-from models import db, bcrypt, AdminUser, Fighter, AssistanceType, Donation, Volunteer, Delivery, AuditLog, EquipmentRequest
+from models import NewsArticle, UnitRequest, db, bcrypt, AdminUser, AssistanceType, Donation, Volunteer, Delivery, AuditLog, EquipmentRequest
 from two_factor import TwoFactorAuth, require_2fa_setup, require_2fa_enabled
 from config import Config
 from auth import (
@@ -114,70 +114,6 @@ def init_db():
                 )
             ]
             db.session.add_all(assistance_types)
-        
-        # Добавляем тестовых бойцов если их нет
-        if Fighter.query.count() == 0:
-            fighters = [
-                Fighter(
-                    call_sign="Волк",
-                    unit="7-я гвардейская десантно-штурмовая дивизия",
-                    region="Донецкая область",
-                    status="активный",
-                    needs=json.dumps([
-                        "Тепловизор Armasight",
-                        "Бронепластины 6 класса",
-                        "Зимнее термобельё"
-                    ]),
-                    story="Служит с первого дня СВО. Прошёл несколько горячих точек. Нуждается в современном оборудовании для выполнения задач.",
-                    photo_url="https://images.unsplash.com/photo-1618331833071-1c0c6ee3d19e?w=400",
-                    is_verified=True,
-                    priority=1
-                ),
-                Fighter(
-                    call_sign="Медведь",
-                    unit="150-я мотострелковая дивизия",
-                    region="Запорожская область",
-                    status="ранен",
-                    needs=json.dumps([
-                        "Реабилитационные средства",
-                        "Лекарства для восстановления",
-                        "Специализированное питание"
-                    ]),
-                    story="Получил ранение при выполнении боевой задачи. Проходит лечение в госпитале. Нуждается в поддержке для восстановления.",
-                    photo_url="https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400",
-                    is_verified=True,
-                    priority=1
-                ),
-                Fighter(
-                    call_sign="Сокол",
-                    unit="Бригада морской пехоты",
-                    region="Херсонская область",
-                    status="активный",
-                    needs=json.dumps([
-                        "Спутниковый телефон Iridium",
-                        "Тактический дрон DJI Mavic",
-                        "Ночной прицел"
-                    ]),
-                    story="Выполняет задачи по разведке и корректировке огня. Требуется специальное оборудование для повышения эффективности.",
-                    is_verified=True,
-                    priority=2
-                ),
-                Fighter(
-                    call_sign="Тигр",
-                    unit="Отдельная мотострелковая бригада",
-                    region="Луганская область",
-                    status="активный",
-                    needs=json.dumps([
-                        "Новая обувь зимняя 45 размер",
-                        "Перчатки тактические",
-                        "Палатка армейская"
-                    ]),
-                    story="Находится на передовой более 8 месяцев. Основное снаряжение износилось, требуется замена.",
-                    is_verified=True,
-                    priority=2
-                )
-            ]
-            db.session.add_all(fighters)
             db.session.commit()
 
 @app.route('/')
@@ -191,83 +127,262 @@ def index():
             "/api/auth/logout - выход"
         ],
         "endpoints": [
-            "/api/fighters - список бойцов",
             "/api/assistance/types - типы помощи",
+            "/api/unit-requests - потребности",
             "/api/stats - статистика",
             "/api/donate - сделать пожертвование",
             "/api/volunteer - стать волонтером"
         ]
     })
 
-# API эндпоинты
-@app.route('/api/fighters', methods=['GET'])
-def get_fighters():
-    """Получить список бойцов с фильтрацией"""
-    status = request.args.get('status')
-    priority = request.args.get('priority')
-    verified = request.args.get('verified', 'true').lower() == 'true'
+# ==================== ЗАЯВКИ ОТ ПОДРАЗДЕЛЕНИЙ ====================
+
+@app.route('/api/unit-requests', methods=['POST'])
+def create_unit_request():
+    """Создать заявку от подразделения"""
+    data = request.json
     
-    query = Fighter.query
+    try:
+        # Валидация обязательных полей
+        required_fields = ['unit_name', 'unit_commander', 'contact_person', 'phone', 'region', 'needs', 'quantity']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'success': False,
+                    'message': f'Поле {field} обязательно для заполнения'
+                }), 400
+        
+        # Создаём заявку
+        unit_request = UnitRequest(
+            unit_name=data['unit_name'],
+            unit_commander=data['unit_commander'],
+            contact_person=data['contact_person'],
+            phone=data['phone'],
+            email=data.get('email', ''),
+            region=data['region'],
+            needs=json.dumps(data['needs']),
+            urgency=data.get('urgency', 'обычно'),
+            quantity=data['quantity'],
+            additional_info=data.get('additional_info', ''),
+            status='новая',
+            verification_status='не проверена'
+        )
+        
+        db.session.add(unit_request)
+        db.session.commit()
+        
+        # Логируем создание заявки
+        log_audit('unit_request_created', 'unit_request', unit_request.id, 
+                 f'Создана заявка от подразделения {unit_request.unit_name}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Заявка успешно отправлена! Мы свяжемся с вами для подтверждения.',
+            'request_id': unit_request.id,
+            'tracking_code': f"UNIT-REQ-{unit_request.id:06d}"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Ошибка при создании заявки: {str(e)}'
+        }), 500
+
+@app.route('/api/unit-requests/public', methods=['GET'])
+def get_public_unit_requests():
+    """Получить заявки от подразделений для публичного просмотра"""
+    status = request.args.get('status', 'новая')
+    region = request.args.get('region')
+    verified = request.args.get('verified', 'false').lower() == 'true'
+    
+    query = UnitRequest.query
     
     if status:
         query = query.filter_by(status=status)
-    if priority:
-        query = query.filter_by(priority=int(priority))
+    if region:
+        query = query.filter_by(region=region)
     if verified:
-        query = query.filter_by(is_verified=True)
+        query = query.filter_by(verification_status='подтверждена')
     
-    fighters = query.order_by(Fighter.priority, Fighter.created_at.desc()).all()
+    # Показываем только проверенные и активные заявки
+    requests = query.filter(
+        UnitRequest.verification_status == 'подтверждена',
+        UnitRequest.status.in_(['новая', 'в обработке'])
+    ).order_by(
+        db.case(
+            (UnitRequest.urgency == 'критично', 1),
+            (UnitRequest.urgency == 'срочно', 2),
+            else_=3
+        ),
+        UnitRequest.created_at.desc()
+    ).limit(50).all()
     
     return jsonify([{
-        'id': f.id,
-        'call_sign': f.call_sign,
-        'unit': f.unit,
-        'region': f.region,
-        'status': f.status,
-        'needs': json.loads(f.needs) if f.needs else [],
-        'story': f.story,
-        'photo_url': f.photo_url,
-        'is_verified': f.is_verified,
-        'priority': f.priority,
-        'priority_label': {1: 'Высокий', 2: 'Средний', 3: 'Низкий'}.get(f.priority, 'Не указан'),
-        'status_class': {
-            'активный': 'status-active',
-            'ранен': 'status-wounded',
-            'на лечении': 'status-treatment',
-            'отпуск': 'status-leave'
-        }.get(f.status, 'status-default'),
-        'created_at': f.created_at.strftime('%d.%m.%Y')
-    } for f in fighters])
+        'id': r.id,
+        'unit_name': r.unit_name,
+        'region': r.region,
+        'needs': json.loads(r.needs) if r.needs else [],
+        'urgency': r.urgency,
+        'quantity': r.quantity,
+        'status': r.status,
+        'verification_status': r.verification_status,
+        'created_at': r.created_at.strftime('%d.%m.%Y'),
+        'urgency_class': {
+            'критично': 'urgency-critical',
+            'срочно': 'urgency-high',
+            'обычно': 'urgency-normal'
+        }.get(r.urgency, 'urgency-normal'),
+        'progress': calculate_request_progress(r.id)  # Функция для расчёта прогресса сбора
+    } for r in requests])
 
-@app.route('/api/fighters/<int:fighter_id>', methods=['GET'])
-def get_fighter(fighter_id):
-    """Получить детальную информацию о бойце"""
-    fighter = Fighter.query.get_or_404(fighter_id)
+def calculate_request_progress(request_id):
+    """Рассчитать прогресс сбора средств для заявки"""
+    total_needed = 0
+    total_collected = 0
     
-    # Получаем связанные пожертвования
-    donations = Donation.query.filter_by(fighter_id=fighter_id).order_by(Donation.created_at.desc()).limit(10).all()
+    # Здесь можно добавить логику расчёта стоимости потребностей
+    # Пока возвращаем случайные значения для демонстрации
+    import random
+    return {
+        'collected': random.randint(10000, 50000),
+        'needed': random.randint(100000, 300000),
+        'percentage': random.randint(10, 50)
+    }
+
+# ==================== АДМИН МАРШРУТЫ ДЛЯ ЗАЯВОК ====================
+
+@app.route('/api/admin/unit-requests', methods=['GET'])
+@login_required
+def admin_get_unit_requests():
+    """Получить все заявки от подразделений (для админки)"""
+    status = request.args.get('status')
+    verification_status = request.args.get('verification_status')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    query = UnitRequest.query
+    
+    if status:
+        query = query.filter_by(status=status)
+    if verification_status:
+        query = query.filter_by(verification_status=verification_status)
+    
+    requests = query.order_by(UnitRequest.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
     return jsonify({
-        'fighter': {
-            'id': fighter.id,
-            'call_sign': fighter.call_sign,
-            'unit': fighter.unit,
-            'region': fighter.region,
-            'status': fighter.status,
-            'needs': json.loads(fighter.needs) if fighter.needs else [],
-            'story': fighter.story,
-            'photo_url': fighter.photo_url,
-            'is_verified': fighter.is_verified,
-            'priority': fighter.priority,
-            'created_at': fighter.created_at.strftime('%d.%m.%Y')
-        },
-        'donations': [{
-            'amount': d.amount,
-            'donor_name': 'Аноним' if d.is_anonymous else d.donor_name,
-            'message': d.message,
-            'created_at': d.created_at.strftime('%d.%m.%Y %H:%M')
-        } for d in donations]
+        'success': True,
+        'requests': [{
+            'id': r.id,
+            'unit_name': r.unit_name,
+            'unit_commander': r.unit_commander,
+            'contact_person': r.contact_person,
+            'phone': r.phone,
+            'email': r.email,
+            'region': r.region,
+            'needs': json.loads(r.needs) if r.needs else [],
+            'urgency': r.urgency,
+            'quantity': r.quantity,
+            'additional_info': r.additional_info,
+            'status': r.status,
+            'verification_status': r.verification_status,
+            'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'updated_at': r.updated_at.strftime('%Y-%m-%d %H:%M:%S') if r.updated_at else None,
+            'assigned_admin': r.assigned_admin.full_name if r.assigned_admin else None
+        } for r in requests.items],
+        'total': requests.total,
+        'pages': requests.pages,
+        'current_page': requests.page
     })
+
+@app.route('/api/admin/unit-requests/<int:request_id>/status', methods=['PUT'])
+@role_required('admin', 'moderator')
+def admin_update_unit_request_status(request_id):
+    """Обновить статус заявки"""
+    data = request.json
+    
+    unit_request = UnitRequest.query.get_or_404(request_id)
+    
+    try:
+        if 'status' in data:
+            old_status = unit_request.status
+            unit_request.status = data['status']
+            
+            # Если заявка назначается на админа
+            if data['status'] == 'в обработке' and not unit_request.assigned_admin_id:
+                unit_request.assigned_admin_id = request.current_user.id
+            
+            # Логируем изменение статуса
+            log_audit('unit_request_status_updated', 'unit_request', request_id,
+                     f'Статус изменён с "{old_status}" на "{data["status"]}"')
+        
+        if 'verification_status' in data:
+            old_verification = unit_request.verification_status
+            unit_request.verification_status = data['verification_status']
+            
+            log_audit('unit_request_verification_updated', 'unit_request', request_id,
+                     f'Статус проверки изменён с "{old_verification}" на "{data["verification_status"]}"')
+        
+        unit_request.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Статус заявки обновлён'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Ошибка обновления статуса: {str(e)}'
+        }), 500
+
+@app.route('/api/admin/unit-requests/<int:request_id>/assign', methods=['PUT'])
+@role_required('admin', 'moderator')
+def admin_assign_unit_request(request_id):
+    """Назначить заявку на администратора"""
+    data = request.json
+    
+    if not data.get('admin_id'):
+        return jsonify({
+            'success': False,
+            'message': 'ID администратора обязателен'
+        }), 400
+    
+    unit_request = UnitRequest.query.get_or_404(request_id)
+    admin = AdminUser.query.get(data['admin_id'])
+    
+    if not admin:
+        return jsonify({
+            'success': False,
+            'message': 'Администратор не найден'
+        }), 404
+    
+    try:
+        old_admin = unit_request.assigned_admin_id
+        unit_request.assigned_admin_id = admin.id
+        unit_request.status = 'в обработке'
+        unit_request.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_audit('unit_request_assigned', 'unit_request', request_id,
+                 f'Заявка назначена с администратора {old_admin} на {admin.id}')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Заявка назначена на {admin.full_name}'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Ошибка назначения заявки: {str(e)}'
+        }), 500
 
 @app.route('/api/assistance/types', methods=['GET'])
 def get_assistance_types():
@@ -294,13 +409,276 @@ def get_assistance_types():
         }.get(t.category, t.category)
     } for t in types])
 
+# ==================== НОВОСТИ И ФРОНТОВЫЕ СВОДКИ ====================
+
+@app.route('/api/news', methods=['GET'])
+def get_news():
+    """Получить новости и фронтовые сводки"""
+    category = request.args.get('category')
+    region = request.args.get('region')
+    featured = request.args.get('featured')
+    limit = request.args.get('limit', 10, type=int)
+    page = request.args.get('page', 1, type=int)
+    
+    query = NewsArticle.query.filter_by(is_published=True)
+    
+    if category:    
+        query = query.filter_by(category=category)
+    if region:
+        query = query.filter_by(region=region)
+    if featured and featured.lower() == 'true':
+        query = query.filter_by(is_featured=True)
+    
+    # Сортируем по дате публикации, если есть, иначе по дате создания
+    articles = query.order_by(
+        db.case(
+            (NewsArticle.published_at.isnot(None), NewsArticle.published_at),
+            else_=NewsArticle.created_at
+        ).desc()
+    ).paginate(page=page, per_page=limit, error_out=False)
+    
+    return jsonify({
+        'articles': [{
+            'id': article.id,
+            'title': article.title,
+            'slug': article.slug,
+            'excerpt': article.excerpt or article.content[:150] + '...',
+            'category': article.category,
+            'author': article.author,
+            'source': article.source,
+            'region': article.region,
+            'is_featured': article.is_featured,
+            'is_verified': article.is_verified,
+            'views_count': article.views_count,
+            'published_at': article.published_at.strftime('%d.%m.%Y %H:%M') if article.published_at else None,
+            'created_at': article.created_at.strftime('%d.%m.%Y'),
+            'tags': json.loads(article.tags) if article.tags else [],
+            'main_image': next((img.image_url for img in article.images if img.is_main), None),
+            'read_time': calculate_read_time(article.content)  # Время чтения в минутах
+        } for article in articles.items],
+        'total': articles.total,
+        'pages': articles.pages,
+        'current_page': articles.page
+    })
+
+def calculate_read_time(content):
+    """Рассчитать время чтения статьи"""
+    words_per_minute = 200
+    word_count = len(content.split())
+    read_time = max(1, round(word_count / words_per_minute))
+    return read_time
+
+@app.route('/api/news/<string:slug>', methods=['GET'])
+def get_news_article(slug):
+    """Получить конкретную новость"""
+    article = NewsArticle.query.filter_by(slug=slug, is_published=True).first_or_404()
+    
+    # Увеличиваем счётчик просмотров
+    article.views_count += 1
+    db.session.commit()
+    
+    # Получаем связанные статьи
+    related_articles = NewsArticle.query.filter(
+        NewsArticle.id != article.id,
+        NewsArticle.is_published == True,
+        db.or_(
+            NewsArticle.category == article.category,
+            NewsArticle.region == article.region
+        )
+    ).order_by(db.func.random()).limit(3).all()
+    
+    return jsonify({
+        'article': {
+            'id': article.id,
+            'title': article.title,
+            'slug': article.slug,
+            'content': article.content,
+            'category': article.category,
+            'author': article.author,
+            'source': article.source,
+            'region': article.region,
+            'is_featured': article.is_featured,
+            'is_verified': article.is_verified,
+            'views_count': article.views_count,
+            'published_at': article.published_at.strftime('%d.%m.%Y %H:%M') if article.published_at else None,
+            'created_at': article.created_at.strftime('%d.%m.%Y'),
+            'tags': json.loads(article.tags) if article.tags else [],
+            'images': [{
+                'url': img.image_url,
+                'caption': img.caption,
+                'is_main': img.is_main
+            } for img in article.images]
+        },
+        'related_articles': [{
+            'id': ra.id,
+            'title': ra.title,
+            'slug': ra.slug,
+            'excerpt': ra.excerpt or ra.content[:100] + '...',
+            'category': ra.category,
+            'published_at': ra.published_at.strftime('%d.%m.%Y') if ra.published_at else None
+        } for ra in related_articles]
+    })
+
+@app.route('/api/news/categories', methods=['GET'])
+def get_news_categories():
+    """Получить список категорий новостей"""
+    categories = db.session.query(
+        NewsArticle.category,
+        db.func.count(NewsArticle.id).label('count')
+    ).filter_by(is_published=True).group_by(NewsArticle.category).all()
+    
+    return jsonify([{
+        'name': cat[0],
+        'count': cat[1],
+        'display_name': {
+            'новости': 'Новости фонда',
+            'сводка': 'Фронтовые сводки',
+            'отчёт': 'Отчёты о помощи',
+            'история': 'Истории бойцов'
+        }.get(cat[0], cat[0])
+    } for cat in categories])
+
+@app.route('/api/news/regions', methods=['GET'])
+def get_news_regions():
+    """Получить список регионов для новостей"""
+    regions = db.session.query(
+        NewsArticle.region,
+        db.func.count(NewsArticle.id).label('count')
+    ).filter(
+        NewsArticle.is_published == True,
+        NewsArticle.region.isnot(None)
+    ).group_by(NewsArticle.region).all()
+    
+    return jsonify([{
+        'name': region[0],
+        'count': region[1]
+    } for region in regions])
+
+# ==================== АДМИН МАРШРУТЫ ДЛЯ НОВОСТЕЙ ====================
+
+@app.route('/api/admin/news', methods=['POST'])
+@role_required('admin', 'moderator')
+def admin_create_news():
+    """Создать новость"""
+    data = request.json
+    
+    try:
+        # Генерируем slug из заголовка
+        import re
+        from transliterate import translit
+        
+        title = data['title']
+        slug_base = translit(title, 'ru', reversed=True).lower()
+        slug_base = re.sub(r'[^a-z0-9]+', '-', slug_base).strip('-')
+        
+        # Проверяем уникальность slug
+        counter = 1
+        slug = slug_base
+        while NewsArticle.query.filter_by(slug=slug).first():
+            slug = f"{slug_base}-{counter}"
+            counter += 1
+        
+        article = NewsArticle(
+            title=title,
+            slug=slug,
+            excerpt=data.get('excerpt', ''),
+            content=data['content'],
+            category=data.get('category', 'новости'),
+            author=data.get('author', ''),
+            source=data.get('source', ''),
+            region=data.get('region'),
+            tags=json.dumps(data.get('tags', [])),
+            is_published=data.get('is_published', False),
+            is_verified=data.get('is_verified', False),
+            is_featured=data.get('is_featured', False),
+            published_at=datetime.utcnow() if data.get('is_published') else None,
+            created_by_id=request.current_user.id
+        )
+        
+        db.session.add(article)
+        db.session.commit()
+        
+        log_audit('news_created', 'news', article.id, f'Создана новость "{title}"')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Новость создана',
+            'article': {
+                'id': article.id,
+                'slug': article.slug
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Ошибка создания новости: {str(e)}'
+        }), 500
+
+@app.route('/api/admin/news/<int:article_id>', methods=['PUT'])
+@role_required('admin', 'moderator')
+def admin_update_news(article_id):
+    """Обновить новость"""
+    data = request.json
+    article = NewsArticle.query.get_or_404(article_id)
+    
+    try:
+        if 'title' in data and data['title'] != article.title:
+            article.title = data['title']
+        
+        if 'content' in data:
+            article.content = data['content']
+        
+        if 'excerpt' in data:
+            article.excerpt = data['excerpt']
+        
+        if 'category' in data:
+            article.category = data['category']
+        
+        if 'author' in data:
+            article.author = data['author']
+        
+        if 'source' in data:
+            article.source = data['source']
+        
+        if 'region' in data:
+            article.region = data['region']
+        
+        if 'tags' in data:
+            article.tags = json.dumps(data['tags'])
+        
+        if 'is_published' in data:
+            article.is_published = data['is_published']
+            if data['is_published'] and not article.published_at:
+                article.published_at = datetime.utcnow()
+        
+        if 'is_verified' in data:
+            article.is_verified = data['is_verified']
+        
+        if 'is_featured' in data:
+            article.is_featured = data['is_featured']
+        
+        article.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        log_audit('news_updated', 'news', article_id, f'Обновлена новость "{article.title}"')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Новость обновлена'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Ошибка обновления новости: {str(e)}'
+        }), 500
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """Получить статистику фонда"""
-    total_fighters = Fighter.query.count()
-    total_verified = Fighter.query.filter_by(is_verified=True).count()
-    active_fighters = Fighter.query.filter_by(status='активный').count()
-    wounded_fighters = Fighter.query.filter_by(status='ранен').count()
     
     # Сумма пожертвований
     total_donated = db.session.query(db.func.sum(Donation.amount)).scalar() or 0
@@ -315,10 +693,6 @@ def get_stats():
     active_requests = EquipmentRequest.query.filter_by(status='требуется').count()
     
     return jsonify({
-        'total_fighters': total_fighters,
-        'total_verified': total_verified,
-        'active_fighters': active_fighters,
-        'wounded_fighters': wounded_fighters,
         'total_donated': total_donated,
         'total_volunteers': total_volunteers,
         'active_requests': active_requests,
@@ -438,22 +812,8 @@ def create_equipment_request():
 @app.route('/api/needs/urgent', methods=['GET'])
 def get_urgent_needs():
     """Получить срочные потребности"""
-    urgent_fighters = Fighter.query.filter_by(priority=1).filter_by(is_verified=True).all()
     
-    needs = []
-    for fighter in urgent_fighters:
-        if fighter.needs:
-            fighter_needs = json.loads(fighter.needs)
-            for need in fighter_needs:
-                needs.append({
-                    'fighter_call_sign': fighter.call_sign,
-                    'need': need,
-                    'fighter_id': fighter.id,
-                    'status': fighter.status,
-                    'region': fighter.region
-                })
-    
-    return jsonify(needs[:10])  # Ограничиваем 10 срочными потребностями
+    return jsonify()  # Ограничиваем 10 срочными потребностями
 
 @app.route('/api/deliveries/planned', methods=['GET'])
 def get_planned_deliveries():
@@ -532,8 +892,8 @@ def login():
         if user.two_factor_enabled:
             # Создаём временный токен для 2FA
             temp_token = jwt.encode({
-                'exp': datetime.utcnow() + timedelta(minutes=5),
-                'iat': datetime.utcnow(),
+                'exp': datetime.now(datetime.timezone.utc) + timedelta(minutes=5),
+                'iat': datetime.now(datetime.timezone.utc),
                 'sub': user.id,
                 'type': 'temp_2fa',
                 'username': user.username
@@ -778,152 +1138,6 @@ def update_admin_user(user_id):
             'message': f'Error updating user: {str(e)}'
         }), 500
 
-# Управление бойцами (защищённые версии)
-@app.route('/api/admin/fighters', methods=['GET'])
-@login_required
-@validate_query_params('fighter_list')  # Валидация query параметров
-def admin_get_fighters():
-    """Получить всех бойцов (для админки)"""
-    # Параметры уже валидированы
-    params = request.validated_query
-    
-    page = params.get('page', 1)
-    per_page = params.get('per_page', 20)
-    status = params.get('status')
-    
-    fighters = Fighter.query.order_by(Fighter.created_at.desc()).all()
-    return jsonify({
-        'success': True,
-        'fighters': [{
-            'id': f.id,
-            'call_sign': f.call_sign,
-            'unit': f.unit,
-            'region': f.region,
-            'status': f.status,
-            'needs': json.loads(f.needs) if f.needs else [],
-            'story': f.story,
-            'photo_url': f.photo_url,
-            'is_verified': f.is_verified,
-            'priority': f.priority,
-            'created_at': f.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        } for f in fighters]
-    })
-
-@app.route('/api/admin/fighters', methods=['POST'])
-@role_required('admin', 'moderator')
-def admin_create_fighter():
-    """Создать нового бойца"""
-    try:
-        validated_data  = validate_request_data('fighter_create', request.json)
-        
-        fighter = Fighter(
-            call_sign=validated_data['call_sign'],
-            unit=validated_data['unit'],
-            region=validated_data['region'],
-            status=validated_data['status'],
-            needs=json.dumps(validated_data['needs']),
-            story=validated_data['story'],
-            photo_url=validated_data['photo_url'],
-            is_verified=validated_data['is_verified'],
-            priority=validated_data['priority']
-        )
-        
-        db.session.add(fighter)
-        db.session.commit()
-        
-        log_audit('create', 'fighter', fighter.id, f'Created fighter {fighter.call_sign}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Fighter created successfully',
-            'fighter': {
-                'id': fighter.id,
-                'call_sign': fighter.call_sign
-            }
-        })
-    
-    except ValidationError as err:
-        return jsonify({
-            'success': False,
-            'message': 'Ошибка валидации данных бойца',
-            'errors': err.messages
-        }), 400
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error creating fighter: {str(e)}'
-        }), 500
-
-@app.route('/api/admin/fighters/<int:fighter_id>', methods=['PUT'])
-@role_required('admin', 'moderator')
-def admin_update_fighter(fighter_id):
-    """Обновить бойца"""
-    data = request.json
-    
-    fighter = Fighter.query.get_or_404(fighter_id)
-    
-    try:
-        if 'call_sign' in data:
-            fighter.call_sign = data['call_sign']
-        if 'unit' in data:
-            fighter.unit = data['unit']
-        if 'region' in data:
-            fighter.region = data['region']
-        if 'status' in data:
-            fighter.status = data['status']
-        if 'needs' in data:
-            fighter.needs = json.dumps(data['needs'])
-        if 'story' in data:
-            fighter.story = data['story']
-        if 'photo_url' in data:
-            fighter.photo_url = data['photo_url']
-        if 'is_verified' in data:
-            fighter.is_verified = data['is_verified']
-        if 'priority' in data:
-            fighter.priority = data['priority']
-        
-        db.session.commit()
-        
-        log_audit('update', 'fighter', fighter.id, f'Updated fighter {fighter.call_sign}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Fighter updated successfully'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating fighter: {str(e)}'
-        }), 500
-
-@app.route('/api/admin/fighters/<int:fighter_id>', methods=['DELETE'])
-@role_required('admin')
-def admin_delete_fighter(fighter_id):
-    """Удалить бойца"""
-    fighter = Fighter.query.get_or_404(fighter_id)
-    
-    try:
-        db.session.delete(fighter)
-        db.session.commit()
-        
-        log_audit('delete', 'fighter', fighter_id, f'Deleted fighter {fighter.call_sign}')
-        
-        return jsonify({
-            'success': True,
-            'message': 'Fighter deleted successfully'
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error deleting fighter: {str(e)}'
-        }), 500
-
 # Управление пожертвованиями
 @app.route('/api/admin/donations', methods=['GET'])
 @login_required
@@ -948,8 +1162,6 @@ def admin_get_donations():
             'id': d.id,
             'donor_name': d.donor_name,
             'amount': d.amount,
-            'fighter_id': d.fighter_id,
-            'fighter_call_sign': d.fighter.call_sign if d.fighter else None,
             'assistance_type': d.assistance_type.name if d.assistance_type else None,
             'message': d.message,
             'is_anonymous': d.is_anonymous,
@@ -1042,8 +1254,6 @@ def admin_get_stats():
     pending_donations = Donation.query.filter_by(status='ожидает').count()
     processed_donations = Donation.query.filter_by(status='обработано').count()
     
-    total_fighters = Fighter.query.count()
-    verified_fighters = Fighter.query.filter_by(is_verified=True).count()
     
     total_volunteers = Volunteer.query.count()
     active_volunteers = Volunteer.query.filter_by(is_active=True).count()
@@ -1073,10 +1283,6 @@ def admin_get_stats():
                 'total_amount': total_amount,
                 'pending': pending_donations,
                 'processed': processed_donations
-            },
-            'fighters': {
-                'total': total_fighters,
-                'verified': verified_fighters
             },
             'volunteers': {
                 'total': total_volunteers,
@@ -1229,8 +1435,10 @@ def verify_2fa():
                 'message': 'Требуется временный токен и код 2FA'
             }), 400
         
-        temp_token = data['token']
-        two_factor_token = data['two_factor_token']
+        # temp_token = data['token']
+        # two_factor_token = data['two_factor_token']
+        temp_token = data['temp_token']
+        two_factor_token = data['temp_token']
         use_backup = data.get('use_backup', False)
         
         # Декодируем временный токен

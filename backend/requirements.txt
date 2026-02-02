@@ -1,11 +1,13 @@
 Flask==2.3.3
 Flask-CORS==4.0.0
+Flask-Limiter==4.1.1
 Flask-SQLAlchemy==3.0.5
 Flask-Bcrypt==1.0.1
 PyJWT==2.8.0
 marshmallow==3.19.0
 python-dotenv==1.0.0
-Pillow==10.0.0
+Pillow==12.1.0
 pyotp==2.8.0
 qrcode[pil]==7.4.2
 python-multipart==0.0.6
+transliterate==1.10.2
