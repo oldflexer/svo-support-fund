@@ -187,41 +187,50 @@
                         <h3>Анкета подразделения</h3>
                         <form @submit.prevent="submitVolunteer" class="requests-form">
                             <div class="form-group">
-                                <label><i class="fas fa-user"></i> ФИО</label>
-                                <input type="text" v-model="volunteerForm.name" required>
+                                <label><i class="fas fa-user"></i> Название подразделения</label>
+                                <input type="text" v-model="" required>
                             </div>
-                            
+
+                            <div class="form-group">
+                                <label><i class="fas fa-user"></i> Командир подразделения</label>
+                                <input type="text" v-model="" required>
+                            </div>
+
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fas fa-envelope"></i> Email</label>
-                                    <input type="email" v-model="volunteerForm.email" required>
+                                    <label><i class="fas fa-user"></i> Контактное лицо</label>
+                                    <input type="text" v-model="" required>
                                 </div>
+
                                 <div class="form-group">
-                                    <label><i class="fas fa-phone"></i> Телефон</label>
-                                    <input type="tel" v-model="volunteerForm.phone">
+                                    <label><i class="fas fa-user"></i> Контактный телефон</label>
+                                    <input type="text" v-model="" required>
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Город</label>
-                                <input type="text" v-model="volunteerForm.city" required>
+                                <label><i class="fas fa-map-marker-alt"></i> Регион дислокации</label>
+                                <input type="text" v-model="" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Количество бойцов</label>
+                                <input type="text" v-model="" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Дополнительная информация</label>
+                                <input type="text" v-model="" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Потребности</label>
+                                <input type="text" v-model="" required>
                             </div>
                             
-                            <div class="form-group">
-                                <label><i class="fas fa-tools"></i> Ваши навыки и возможности</label>
-                                <textarea v-model="volunteerForm.skills" placeholder="Что вы можете сделать? Есть ли автомобиль? И т.д." rows="3"></textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" v-model="volunteerForm.can_deliver">
-                                    <span>Могу участвовать в доставке помощи</span>
-                                </label>
-                            </div>
-                            
-                            <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
+                            <button type="submit" class="btn-primary btn-block" :disabled="">
                                 <i class="fas fa-user-plus"></i> 
-                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
+                                {{ requestLoading ? 'Отправка...' : 'Отправить заявку' }}
                             </button>
                         </form>
                     </div>
