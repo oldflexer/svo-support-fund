@@ -1,34 +1,14 @@
 import jwt
 import datetime
-from functools import wraps
 from flask import request, jsonify, current_app
 from models import AdminUser, AuditLog, db
 
 class AuthError(Exception):
-    """Исключение для ошибок аутентификации"""
+    """Exception for authentication errors"""
     pass
 
-def create_access_token(user_id, username, role):
-    """Создание JWT токена"""
-    try:
-        payload = {
-            'exp': datetime.datetime.utcnow() + current_app.config['JWT_ACCESS_TOKEN_EXPIRES'],
-            'iat': datetime.datetime.utcnow(),
-            'sub': user_id,
-            'username': username,
-            'role': role,
-            'type': 'access'
-        }
-        return jwt.encode(
-            payload,
-            current_app.config['JWT_SECRET_KEY'],
-            algorithm='HS256'
-        )
-    except Exception as e:
-        raise AuthError(f"Error creating token: {str(e)}")
-
 def create_refresh_token(user_id):
-    """Создание refresh токена"""
+    """Create refresh token"""
     try:
         payload = {
             'exp': datetime.datetime.utcnow() + current_app.config['JWT_REFRESH_TOKEN_EXPIRES'],
@@ -45,7 +25,7 @@ def create_refresh_token(user_id):
         raise AuthError(f"Error creating refresh token: {str(e)}")
 
 def verify_token(token, require_2fa=False):
-    """Верификация JWT токена с возможной проверкой 2FA"""
+    """Verify JWT token with optional 2FA check"""
     try:
         payload = jwt.decode(
             token,
@@ -53,7 +33,7 @@ def verify_token(token, require_2fa=False):
             algorithms=['HS256']
         )
         
-        # Если требуется 2FA, проверяем что она пройдена
+        # If 2FA is required, check that it has been completed
         if require_2fa:
             user = AdminUser.query.get(payload['sub'])
             if user and user.two_factor_enabled and not payload.get('2fa_verified', False):
@@ -66,7 +46,7 @@ def verify_token(token, require_2fa=False):
         raise AuthError('Invalid token')
 
 def get_token_from_header():
-    """Извлечение токена из заголовка Authorization"""
+    """Extract token from Authorization header"""
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         raise AuthError('Authorization header is missing')
@@ -79,31 +59,30 @@ def get_token_from_header():
 
 def login_required(func, require_2fa=False):
     """
-    Декоратор для защиты маршрутов, требующих аутентификации
-    
+    Decorator for protecting routes that require authentication
     Args:
-        require_2fa: Требовать ли проверку 2FA
+        require_2fa: Whether to require 2FA verification
     """
     def decorator(*args, **kwargs):
         try:
             token = get_token_from_header()
             payload = verify_token(token)
             
-            # Проверяем, что токен access, а не refresh
+            # Check that the token is access, not refresh
             if payload.get('type') != 'access':
                 raise AuthError('Invalid token type')
             
-            # Получаем пользователя из базы
+            # Get user from database
             user = AdminUser.query.get(payload['sub'])
             if not user or not user.is_active:
                 raise AuthError('User not found or inactive')
             
-            # Если требуется 2FA, проверяем что она пройдена
+            # If 2FA is required, check that it has been completed
             if require_2fa and user.two_factor_enabled:
                 if not payload.get('2fa_verified', False):
                     raise AuthError('2FA verification required')
             
-            # Добавляем пользователя в контекст запроса
+            # Add user to request context
             request.current_user = user
             return func(*args, **kwargs)
         
@@ -117,7 +96,7 @@ def login_required(func, require_2fa=False):
     return decorator
     
 def create_access_token(user_id, username, role, two_factor_verified=False):
-    """Создание JWT токена с учётом 2FA"""
+    """Create JWT token with 2FA consideration"""
     try:
         payload = {
             'exp': datetime.datetime.utcnow() + current_app.config['JWT_ACCESS_TOKEN_EXPIRES'],
@@ -138,7 +117,7 @@ def create_access_token(user_id, username, role, two_factor_verified=False):
         raise AuthError(f"Error creating token: {str(e)}")
 
 def role_required(*roles):
-    """Декоратор для проверки ролей пользователя"""
+    """Decorator for checking user roles"""
     def decorator(f):
         @wraps(f)
         @login_required
@@ -153,7 +132,7 @@ def role_required(*roles):
     return decorator
 
 def log_audit(action, entity_type=None, entity_id=None, details=None):
-    """Логирование действий администратора"""
+    """Log admin actions"""
     if hasattr(request, 'current_user'):
         audit_log = AuditLog(
             admin_id=request.current_user.id,
@@ -168,7 +147,7 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
         db.session.commit()
 
 def validate_password(password):
-    """Валидация пароля"""
+    """Validate password"""
     if len(password) < 8:
         return False, "Password must be at least 8 characters long"
     if not any(c.isupper() for c in password):
