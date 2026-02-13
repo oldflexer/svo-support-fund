@@ -16,10 +16,10 @@ from backend.utils.helpers import paginate_results, format_date, format_currency
 from backend.config import Config
 from backend.models import AdminUser, UnitRequest, Donation, AuditLog, TwoFactor
 
-admin_bp = Blueprint('admin', __name__)
+admin_extended_bp = Blueprint('admin', __name__)
 
 # Unit Requests Endpoints
-@admin_bp.route('/api/admin/unit-requests', methods=['GET'])
+@admin_extended_bp.route('/api/admin/unit-requests', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -85,7 +85,7 @@ def get_unit_requests():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting unit requests: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/unit-requests/<int:request_id>', methods=['GET'])
+@admin_extended_bp.route('/api/admin/unit-requests/<int:request_id>', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -139,7 +139,7 @@ def get_unit_request(request_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting unit request: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/unit-requests/<int:request_id>', methods=['PUT'])
+@admin_extended_bp.route('/api/admin/unit-requests/<int:request_id>', methods=['PUT'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -195,7 +195,7 @@ def update_unit_request(request_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error updating unit request: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/unit-requests', methods=['POST'])
+@admin_extended_bp.route('/api/admin/unit-requests', methods=['POST'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -246,7 +246,7 @@ def create_unit_request():
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error creating unit request: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/unit-requests/<int:request_id>', methods=['DELETE'])
+@admin_extended_bp.route('/api/admin/unit-requests/<int:request_id>', methods=['DELETE'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -280,7 +280,7 @@ def delete_unit_request(request_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error deleting unit request: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/unit-requests/bulk', methods=['PUT'])
+@admin_extended_bp.route('/api/admin/unit-requests/bulk', methods=['PUT'])
 @cross_origin()
 @login_required()
 @admin_required()

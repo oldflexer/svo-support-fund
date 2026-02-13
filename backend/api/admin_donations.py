@@ -16,10 +16,10 @@ from backend.utils.helpers import paginate_results, format_date, format_currency
 from backend.config import Config
 from backend.models import AdminUser, UnitRequest, Donation, AuditLog, TwoFactor
 
-admin_bp = Blueprint('admin', __name__)
+admin_donations_bp = Blueprint('admin', __name__)
 
 # Donations Endpoints
-@admin_bp.route('/api/admin/donations', methods=['GET'])
+@admin_donations_bp.route('/api/admin/donations', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -78,7 +78,7 @@ def get_donations():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting donations: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/donations/<int:donation_id>', methods=['GET'])
+@admin_donations_bp.route('/api/admin/donations/<int:donation_id>', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -122,7 +122,7 @@ def get_donation(donation_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting donation: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/donations', methods=['POST'])
+@admin_donations_bp.route('/api/admin/donations', methods=['POST'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -177,7 +177,7 @@ def create_donation():
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error creating donation: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/donations/<int:donation_id>', methods=['PUT'])
+@admin_donations_bp.route('/api/admin/donations/<int:donation_id>', methods=['PUT'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -226,7 +226,7 @@ def update_donation(donation_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error updating donation: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/donations/<int:donation_id>', methods=['DELETE'])
+@admin_donations_bp.route('/api/admin/donations/<int:donation_id>', methods=['DELETE'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -258,7 +258,7 @@ def delete_donation(donation_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error deleting donation: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/donations/bulk', methods=['PUT'])
+@admin_donations_bp.route('/api/admin/donations/bulk', methods=['PUT'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -307,7 +307,7 @@ def bulk_update_donations():
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error bulk updating donations: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/donations/stats', methods=['GET'])
+@admin_donations_bp.route('/api/admin/donations/stats', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()

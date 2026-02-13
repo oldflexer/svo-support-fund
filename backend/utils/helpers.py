@@ -99,3 +99,4 @@ def dict_to_object(data, obj):
         if hasattr(obj, key):
             setattr(obj, key, value)
     return obj
+

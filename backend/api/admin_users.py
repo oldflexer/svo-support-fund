@@ -16,10 +16,10 @@ from backend.utils.helpers import paginate_results, format_date, format_currency
 from backend.config import Config
 from backend.models import AdminUser, UnitRequest, Donation, AuditLog, TwoFactor
 
-admin_bp = Blueprint('admin', __name__)
+admin_users_bp = Blueprint('admin', __name__)
 
 # User Management Endpoints
-@admin_bp.route('/api/admin/users', methods=['GET'])
+@admin_users_bp.route('/api/admin/users', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -75,7 +75,7 @@ def get_users():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting users: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/users/<int:user_id>', methods=['GET'])
+@admin_users_bp.route('/api/admin/users/<int:user_id>', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -119,7 +119,7 @@ def get_user(user_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting user: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/users', methods=['POST'])
+@admin_users_bp.route('/api/admin/users', methods=['POST'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -175,7 +175,7 @@ def create_user():
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error creating user: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@admin_users_bp.route('/api/admin/users/<int:user_id>', methods=['PUT'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -240,7 +240,7 @@ def update_user(user_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error updating user: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_users_bp.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -276,7 +276,7 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error deleting user: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/users/bulk', methods=['PUT'])
+@admin_users_bp.route('/api/admin/users/bulk', methods=['PUT'])
 @cross_origin()
 @login_required()
 @admin_required()

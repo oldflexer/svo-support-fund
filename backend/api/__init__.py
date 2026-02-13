@@ -25,10 +25,10 @@ CORS(admin_bp, supports_credentials=True)
 def register_admin_blueprints(app):
     """Register all admin blueprints with /admin prefix"""
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(admin_extended.admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(admin_donations.admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(admin_users.admin_bp, url_prefix='/api/admin')
-    app.register_blueprint(admin_audit.admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_extended.admin_extended_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_donations.admin_donations_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_users.admin_users_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_audit.admin_audit_bp, url_prefix='/api/admin')
 
 # Register public and auth blueprints
 def register_public_blueprints(app):

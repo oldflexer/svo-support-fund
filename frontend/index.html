@@ -24,7 +24,7 @@
                     </div>
                     <div class="nav-menu">
                         <a href="#requests" @click.prevent="scrollTo('requests')" class="nav-link">Прием заявок от подразделений</a>
-                        <a href="#needs" @click.prevent="scrollTo('needs')" class="nav-link">Текущие сборы</a>
+                        <a href="#current-drives" @click.prevent="scrollTo('current-drives')" class="nav-link">Текущие сборы</a>
                         <a href="#volunteer" @click.prevent="scrollTo('volunteer')" class="nav-link">Ищем партнеров</a>
                         <a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Фронтовые сводки</a>
                         <a href="#about" @click.prevent="scrollTo('about')" class="nav-link">О фонде</a>
@@ -181,7 +181,32 @@
                 <h2 class="section-title">
                     <i class="fas fa-parachute-box"></i> Прием заявок от подразделений
                 </h2>
-                <div class="requests-section">
+                <div class="volunteer-section">
+                    <div class="volunteer-info">
+                        <h3>В чем вы нуждаетесь?</h3>
+                        <div class="volunteer-options">
+                            <div class="volunteer-option">
+                                <i class="fas fa-truck"></i>
+                                <h4>Доставка</h4>
+                                <p>Осуществляем доставку непосредственно к месту дислокации</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-box-open"></i>
+                                <h4>БПЛА и средства РЭБ</h4>
+                                <p>Осуществляем поддержку передовыми техническими средствами</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-hands"></i>
+                                <h4>Координация</h4>
+                                <p>Организации сбора средств и вещей</p>
+                            </div>
+                            <div class="volunteer-option">
+                                <i class="fas fa-laptop"></i>
+                                <h4>Информационная поддержка</h4>
+                                <p>Освещение последних событий с передовой</p>
+                            </div>
+                        </div>
+                    </div>
                                         
                     <div class="requests-form-card">
                         <h3>Анкета подразделения</h3>

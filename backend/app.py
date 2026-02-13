@@ -31,3 +31,4 @@ app.register_blueprint(admin_audit_bp, url_prefix='/api/admin')
 app.register_blueprint(assistance_bp, url_prefix='/api')
 app.register_blueprint(stats_bp, url_prefix='/api')
 
+

@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from backend.middleware import login_required, admin_required
 from backend.config import Config
 from backend.models import AdminUser, UnitRequest, Donation, AuditLog
-admin_bp = Blueprint('admin', __name__)
+admin_audit_bp = Blueprint('admin', __name__)
 
 # Audit Logs Endpoints
-@admin_bp.route('/api/admin/audit-logs', methods=['GET'])
+@admin_audit_bp.route('/api/admin/audit-logs', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -70,7 +70,7 @@ def get_audit_logs():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting audit logs: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/audit-logs/<int:log_id>', methods=['GET'])
+@admin_audit_bp.route('/api/admin/audit-logs/<int:log_id>', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -110,7 +110,7 @@ def get_audit_log(log_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting audit log: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/audit-logs/stats', methods=['GET'])
+@admin_audit_bp.route('/api/admin/audit-logs/stats', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -157,7 +157,7 @@ def get_audit_stats():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error getting audit stats: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/audit-logs/export', methods=['GET'])
+@admin_audit_bp.route('/api/admin/audit-logs/export', methods=['GET'])
 @cross_origin()
 @login_required()
 @admin_required()
@@ -186,7 +186,7 @@ def export_audit_logs():
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error exporting audit logs: {str(e)}'}), 500
 
-@admin_bp.route('/api/admin/audit-logs/clear', methods=['POST'])
+@admin_audit_bp.route('/api/admin/audit-logs/clear', methods=['POST'])
 @cross_origin()
 @login_required()
 @admin_required()
