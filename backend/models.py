@@ -7,7 +7,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 class AdminUser(db.Model):
-    """Администраторы системы"""
+    """System administrators"""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -18,13 +18,13 @@ class AdminUser(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     
-    # Поля для двухфакторной аутентификации
+    # Two-factor authentication fields
     two_factor_enabled = db.Column(db.Boolean, default=False)
-    two_factor_secret = db.Column(db.String(32))  # Секрет для генерации OTP
-    two_factor_backup_codes = db.Column(db.Text)  # JSON список резервных кодов
-    two_factor_last_used = db.Column(db.DateTime)  # Время последнего использования 2FA
+    two_factor_secret = db.Column(db.String(32))  # Secret for generating OTP
+    two_factor_backup_codes = db.Column(db.Text)  # JSON list of backup codes
+    two_factor_last_used = db.Column(db.DateTime)  # Time of last 2FA usage
     
-    # Связи
+    # Relationships
     login_attempts = db.relationship('FailedLoginAttempt', backref='admin', lazy=True)
     audit_logs = db.relationship('AuditLog', backref='admin', lazy=True)
     
@@ -35,12 +35,12 @@ class AdminUser(db.Model):
         return bcrypt.check_password_hash(self.password_hash, password)
     
     def generate_two_factor_secret(self):
-        """Генерация секрета для 2FA"""
+        """Generate secret for 2FA"""
         self.two_factor_secret = pyotp.random_base32()
         return self.two_factor_secret
     
     def get_two_factor_provisioning_uri(self, issuer_name="Фонд СВО"):
-        """Получение URI для QR-кода"""
+        """Get URI for QR code"""
         if not self.two_factor_secret:
             self.generate_two_factor_secret()
         
@@ -50,15 +50,15 @@ class AdminUser(db.Model):
         )
     
     def verify_two_factor_token(self, token):
-        """Проверка OTP токена"""
+        """Verify OTP token"""
         if not self.two_factor_secret:
             return False
         
         totp = pyotp.TOTP(self.two_factor_secret)
-        return totp.verify(token, valid_window=1)  # valid_window=1 позволяет небольшие расхождения во времени
+        return totp.verify(token, valid_window=1)  # valid_window=1 allows for small time discrepancies
     
     def verify_backup_code(self, code):
-        """Проверка резервного кода"""
+        """Verify backup code"""
         if not self.two_factor_backup_codes:
             return False
         
@@ -66,7 +66,7 @@ class AdminUser(db.Model):
         try:
             backup_codes = json.loads(self.two_factor_backup_codes)
             if code in backup_codes:
-                # Удаляем использованный код
+                # Remove used code
                 backup_codes.remove(code)
                 self.two_factor_backup_codes = json.dumps(backup_codes)
                 return True
@@ -76,13 +76,13 @@ class AdminUser(db.Model):
         return False
     
     def generate_backup_codes(self, count=10):
-        """Генерация резервных кодов"""
+        """Generate backup codes"""
         import secrets
         import json
         
         backup_codes = []
         for _ in range(count):
-            # Генерируем 8-значные коды с разделителем
+            # Generate 8-digit codes with separator
             code = f"{secrets.randbelow(10000):04d}-{secrets.randbelow(10000):04d}"
             backup_codes.append(code)
         
@@ -103,9 +103,9 @@ class AdminUser(db.Model):
         }
     
     def to_dict_without_secrets(self):
-        """Версия без чувствительных данных"""
+        """Version without sensitive data"""
         data = self.to_dict()
-        # Убираем секреты из ответа
+        # Remove secrets from response
         if 'two_factor_secret' in data:
             del data['two_factor_secret']
         if 'two_factor_backup_codes' in data:
@@ -113,7 +113,7 @@ class AdminUser(db.Model):
         return data
         
 class FailedLoginAttempt(db.Model):
-    """Неудачные попытки входа"""
+    """Failed login attempts"""
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80))
     admin_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
@@ -121,43 +121,43 @@ class FailedLoginAttempt(db.Model):
     user_agent = db.Column(db.Text)
     attempted_at = db.Column(db.DateTime, default=datetime.utcnow)
     reason = db.Column(db.String(100))  # 'wrong_password', '2fa_failed', etc.
-
+    
 class UnitRequest(db.Model):
-    """Заявки от подразделений"""
+    """Unit requests"""
     id = db.Column(db.Integer, primary_key=True)
-    unit_name = db.Column(db.String(200), nullable=False)  # Название подразделения
-    unit_commander = db.Column(db.String(150), nullable=False)  # Командир подразделения
-    contact_person = db.Column(db.String(150), nullable=False)  # Контактное лицо
-    phone = db.Column(db.String(20), nullable=False)  # Контактный телефон
+    unit_name = db.Column(db.String(200), nullable=False)  # Name of the unit
+    unit_commander = db.Column(db.String(150), nullable=False)  # Commander of the unit
+    contact_person = db.Column(db.String(150), nullable=False)  # Contact person
+    phone = db.Column(db.String(20), nullable=False)  # Contact phone
     email = db.Column(db.String(120))  # Email
-    region = db.Column(db.String(100), nullable=False)  # Регион дислокации
-    needs = db.Column(db.Text, nullable=False)  # JSON с потребностями
-    urgency = db.Column(db.String(50), default='обычно')  # Срочность
-    quantity = db.Column(db.Integer, nullable=False)  # Количество бойцов
-    additional_info = db.Column(db.Text)  # Дополнительная информация
-    status = db.Column(db.String(50), default='новая')  # Статус: новая, в обработке, выполнена, отклонена
-    verification_status = db.Column(db.String(50), default='не проверена')  # Статус проверки
+    region = db.Column(db.String(100), nullable=False)  # Region of deployment
+    needs = db.Column(db.Text, nullable=False)  # JSON with needs
+    urgency = db.Column(db.String(50), default='usually')  # Urgency
+    quantity = db.Column(db.Integer, nullable=False)  # Number of fighters
+    additional_info = db.Column(db.Text)  # Additional information
+    status = db.Column(db.String(50), default='new')  # Status: new, in processing, completed, rejected
+    verification_status = db.Column(db.String(50), default='not verified')  # Verification status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
     
-    # Связь с администратором, который обрабатывает заявку
+    # Relationship with the administrator processing the request
     assigned_admin_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
     assigned_admin = db.relationship('AdminUser', backref='unit_requests')
     
-    # Связь с пожертвованиями, которые идут на эту заявку
+    # Relationship with donations for this request
     donation_id = db.Column(db.Integer, db.ForeignKey('donation.id'))
     donation = db.relationship('Donation', backref='unit_request', lazy=True)
         
 class AssistanceType(db.Model):
-    """Типы помощи"""
+    """Assistance types"""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     icon = db.Column(db.String(50))
-    category = db.Column(db.String(50))  # 'медицина', 'техника', 'снаряжение', 'прочее'
+    category = db.Column(db.String(50))  # 'medicine', 'equipment', 'gear', 'other'
 
 class Donation(db.Model):
-    """Пожертвования"""
+    """Donations"""
     id = db.Column(db.Integer, primary_key=True)
     donor_name = db.Column(db.String(100))
     amount = db.Column(db.Float, nullable=False)
@@ -165,21 +165,21 @@ class Donation(db.Model):
     message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_anonymous = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(50), default='ожидает')  # 'ожидает', 'обработано', 'отправлено'
+    status = db.Column(db.String(50), default='waiting')  # 'waiting', 'processed', 'sent'
     
     assistance_type = db.relationship('AssistanceType', backref='donations')
 
 class EquipmentRequest(db.Model):
-    """Запросы на снаряжение"""
+    """Equipment requests"""
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(200), nullable=False)
     quantity = db.Column(db.Integer, default=1)
-    urgency = db.Column(db.String(50))  # 'критично', 'срочно', 'обычно'
-    status = db.Column(db.String(50), default='требуется')
+    urgency = db.Column(db.String(50))  # 'critical', 'urgent', 'usual'
+    status = db.Column(db.String(50), default='needed')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    
 class Volunteer(db.Model):
-    """Волонтеры"""
+    """Volunteers"""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False)
@@ -191,42 +191,42 @@ class Volunteer(db.Model):
     is_active = db.Column(db.Boolean, default=True)
 
 class Delivery(db.Model):
-    """Доставки помощи"""
+    """Deliveries of assistance"""
     id = db.Column(db.Integer, primary_key=True)
     volunteer_id = db.Column(db.Integer, db.ForeignKey('volunteer.id'))
     destination = db.Column(db.String(300))
-    status = db.Column(db.String(50), default='планируется')
+    status = db.Column(db.String(50), default='planned')
     departure_date = db.Column(db.DateTime)
     estimated_arrival = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class NewsArticle(db.Model):
-    """Новости и фронтовые сводки"""
+    """News and frontline reports"""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     slug = db.Column(db.String(200), unique=True, nullable=False)
     excerpt = db.Column(db.Text)
     content = db.Column(db.Text, nullable=False)
-    category = db.Column(db.String(50), default='новости')  # новости, сводка, отчёт, история
+    category = db.Column(db.String(50), default='news')  # news, report, summary, story
     author = db.Column(db.String(100))
-    source = db.Column(db.String(200))  # Источник информации
-    region = db.Column(db.String(100))  # Регион к которому относится новость
+    source = db.Column(db.String(200))  # Source of information
+    region = db.Column(db.String(100))  # Region to which the news relates
     is_published = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
-    is_featured = db.Column(db.Boolean, default=False)  # Важная новость
+    is_featured = db.Column(db.Boolean, default=False)  # Important news
     views_count = db.Column(db.Integer, default=0)
     published_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
     
-    # Связи
-    tags = db.Column(db.Text)  # JSON список тегов
+    # Relationships
+    tags = db.Column(db.Text)  # JSON list of tags
     images = db.relationship('NewsImage', backref='article', lazy=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
     created_by = db.relationship('AdminUser', backref='news_articles')
 
 class NewsImage(db.Model):
-    """Изображения для новостей"""
+    """Images for news"""
     id = db.Column(db.Integer, primary_key=True)
     article_id = db.Column(db.Integer, db.ForeignKey('news_article.id'), nullable=False)
     image_url = db.Column(db.String(300), nullable=False)
@@ -236,7 +236,7 @@ class NewsImage(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
 class AuditLog(db.Model):
-    """Лог действий администраторов"""
+    """Administrator action logs"""
     id = db.Column(db.Integer, primary_key=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
     action = db.Column(db.String(100), nullable=False)  # 'login', 'create', 'update', 'delete'

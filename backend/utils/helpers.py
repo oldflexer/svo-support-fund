@@ -3,13 +3,15 @@
 def get_file_extension(filename):
     """Get file extension from filename"""
     return filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+
 def is_allowed_file(filename, allowed_extensions=None):
     """Check if file has allowed extension"""
     if allowed_extensions is None:
         allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx']
     
-    return '.' in filename and \ 
-           filename.rsplit('.', 1)[1].lower() in allowed_extensions
+        return filename.rsplit('.', 1)[1].lower() in allowed_extensions
+    else:
+        return False
 
 # Random utilities
 def generate_random_string(length=8):

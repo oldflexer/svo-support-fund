@@ -2,6 +2,7 @@ import jwt
 import datetime
 from flask import request, jsonify, current_app
 from models import AdminUser, AuditLog, db
+from functools import wraps  # Добавлен импорт
 
 class AuthError(Exception):
     """Exception for authentication errors"""

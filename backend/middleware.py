@@ -1,43 +1,43 @@
 from functools import wraps
 from flask import request, jsonify
-from schemas import validate_request_data, ValidationError
+from backend.schemas import validate_request_data, ValidationError
 
 def validate_json(schema_name):
     """
-    Middleware для валидации JSON данных
+    Middleware for validating JSON data
     
     Args:
-        schema_name: имя схемы из schemas.py
+        schema_name: name of the schema from schemas.py
     """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Проверяем Content-Type
+            # Check Content-Type
             if not request.is_json:
                 return jsonify({
                     'success': False,
-                    'message': 'Content-Type должен быть application/json'
+                    'message': 'Content-Type must be application/json'
                 }), 400
             
-            # Получаем JSON данные
+            # Get JSON data
             data = request.get_json(silent=True)
             if data is None:
                 return jsonify({
                     'success': False,
-                    'message': 'Невалидный JSON'
+                    'message': 'Invalid JSON'
                 }), 400
             
             try:
-                # Валидируем данные
+                # Validate data
                 validated_data = validate_request_data(schema_name, data)
                 
-                # Сохраняем валидированные данные в request
+                # Save validated data in request
                 request.validated_data = validated_data
                 
             except ValidationError as err:
                 return jsonify({
                     'success': False,
-                    'message': 'Ошибка валидации данных',
+                    'message': 'Data validation error',
                     'errors': err.messages
                 }), 400
             
@@ -45,9 +45,10 @@ def validate_json(schema_name):
         return decorated_function
     return decorator
 
+
 def validate_query_params(schema_name):
     """
-    Middleware для валидации query параметров
+    Middleware for validating query parameters
     """
     def decorator(f):
         @wraps(f)
@@ -60,10 +61,11 @@ def validate_query_params(schema_name):
             except ValidationError as err:
                 return jsonify({
                     'success': False,
-                    'message': 'Ошибка валидации query параметров',
+                    'message': 'Query parameters validation error',
                     'errors': err.messages
                 }), 400
             
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+

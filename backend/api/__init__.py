@@ -2,7 +2,7 @@
 API Blueprints initialization
 """
 
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask_cors import CORS
 
 # Create Blueprints
@@ -43,7 +43,9 @@ def health_check():
     try:
         # Test database connection
         from backend.models import db
-        db.session.execute('SELECT 1')
+        # Use text() function to create a text clause
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
         
         return jsonify({
             'success': True,
@@ -57,3 +59,4 @@ def health_check():
             'message': f'API health check failed: {str(e)}',
             'status': 'degraded'
         }), 503
+

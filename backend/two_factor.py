@@ -1,5 +1,5 @@
 """
-Модуль для двухфакторной аутентификации (2FA)
+Module for two-factor authentication (2FA)
 """
 import qrcode
 from io import BytesIO
@@ -12,27 +12,25 @@ from models import db, FailedLoginAttempt
 from auth import log_audit
 
 class TwoFactorAuth:
-    """Класс для управления двухфакторной аутентификацией"""
-    
+    """Class for managing two-factor authentication"""
     @staticmethod
     def setup_2fa(user):
         """
-        Настройка 2FA для пользователя
-        
+        Setup 2FA for user
         Returns:
-            dict: Данные для настройки 2FA (секрет, QR код, резервные коды)
+            dict: 2FA setup data (secret, QR code, backup codes)
         """
-        # Генерируем секрет если его нет
+        # Generate secret if it doesn't exist
         if not user.two_factor_secret:
             user.generate_two_factor_secret()
         
-        # Генерируем резервные коды если их нет
+        # Generate backup codes if they don't exist
         if not user.two_factor_backup_codes:
             backup_codes = user.generate_backup_codes()
         else:
             backup_codes = json.loads(user.two_factor_backup_codes)
         
-        # Генерируем QR код
+        # Generate QR code
         provisioning_uri = user.get_two_factor_provisioning_uri()
         qr_code_data = TwoFactorAuth.generate_qr_code(provisioning_uri)
         
@@ -48,15 +46,15 @@ class TwoFactorAuth:
     @staticmethod
     def generate_qr_code(provisioning_uri):
         """
-        Генерация QR кода в base64
+        Generate QR code in base64
         
         Args:
-            provisioning_uri: URI для настройки в аутентификаторе
+            provisioning_uri: URI for authenticator setup
             
         Returns:
-            str: base64 encoded PNG изображение QR кода
+            str: base64 encoded PNG image of QR code
         """
-        # Создаём QR код
+        # Create QR code
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -66,10 +64,10 @@ class TwoFactorAuth:
         qr.add_data(provisioning_uri)
         qr.make(fit=True)
         
-        # Создаём изображение
+        # Create image
         img = qr.make_image(fill_color="black", back_color="white")
         
-        # Конвертируем в base64
+        # Convert to base64
         buffered = BytesIO()
         img.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -79,28 +77,25 @@ class TwoFactorAuth:
     @staticmethod
     def verify_2fa_token(user, token, use_backup=False):
         """
-        Проверка 2FA токена
-        
+        Verify 2FA token
         Args:
-            user: Объект пользователя
-            token: Введённый токен
-            use_backup: Использовать ли резервный код
-            
+            user: User object
+            token: Entered token
+            use_backup: Use backup code
         Returns:
-            bool: Успешна ли проверка
+            bool: Whether verification was successful
         """
         if not user.two_factor_enabled or not user.two_factor_secret:
-            return True  # Если 2FA не включена, пропускаем проверку
-        
+            return True  # If 2FA is not enabled, skip verification
         if use_backup:
-            # Проверяем резервный код
+            # Check backup code
             if user.verify_backup_code(token):
                 log_audit('2fa_backup_used', 'user', user.id, 'Used backup code')
                 db.session.commit()
                 return True
             return False
         
-        # Проверяем обычный OTP токен
+        # Check regular OTP token
         if user.verify_two_factor_token(token):
             user.two_factor_last_used = datetime.utcnow()
             db.session.commit()
@@ -111,121 +106,114 @@ class TwoFactorAuth:
     @staticmethod
     def enable_2fa(user, token):
         """
-        Включение 2FA после проверки первого токена
-        
+        Enable 2FA after verifying first token
         Args:
-            user: Объект пользователя
-            token: Первый токен для подтверждения
-            
+            user: User object
+            token: First token for verification
         Returns:
             tuple: (success, message)
         """
         if user.two_factor_enabled:
-            return False, "2FA уже включена"
+            return False, "2FA is already enabled"
         
         if not user.two_factor_secret:
-            return False, "Сначала настройте 2FA"
+            return False, "Setup 2FA first"
         
-        # Проверяем токен
+        # Verify token
         if not user.verify_two_factor_token(token):
-            return False, "Неверный токен"
+            return False, "Invalid token"
         
-        # Включаем 2FA
+        # Enable 2FA
         user.two_factor_enabled = True
         user.two_factor_last_used = datetime.utcnow()
         
-        # Логируем действие
+        # Log action
         log_audit('2fa_enabled', 'user', user.id, 'Enabled two-factor authentication')
         
         db.session.commit()
-        return True, "2FA успешно включена"
-    
+        return True, "2FA enabled successfully"
     @staticmethod
     def disable_2fa(user, password=None, token=None):
         """
-        Отключение 2FA
+        Disable 2FA
         
         Args:
-            user: Объект пользователя
-            password: Пароль для подтверждения (опционально)
-            token: Токен 2FA (опционально)
-            
+            user: User object
+            password: Password for confirmation (optional)
+            token: 2FA token (optional)
         Returns:
             tuple: (success, message)
         """
         if not user.two_factor_enabled:
-            return False, "2FA не включена"
+            return False, "2FA is not enabled"
         
-        # Если есть пароль - проверяем его
+        # If password is provided, verify it
         if password and not user.check_password(password):
-            return False, "Неверный пароль"
+            return False, "Incorrect password"
         
-        # Если требуется токен - проверяем его
+        # If token is required, verify it
         if token and not TwoFactorAuth.verify_2fa_token(user, token):
-            return False, "Неверный токен 2FA"
+            return False, "Incorrect 2FA token"
         
-        # Отключаем 2FA
+        # Disable 2FA
         user.two_factor_enabled = False
         user.two_factor_secret = None
         user.two_factor_backup_codes = None
         user.two_factor_last_used = None
         
-        # Логируем действие
+        # Log action
         log_audit('2fa_disabled', 'user', user.id, 'Disabled two-factor authentication')
         
         db.session.commit()
-        return True, "2FA успешно отключена"
+        return True, "2FA disabled successfully"
     
     @staticmethod
     def regenerate_backup_codes(user, token):
         """
-        Регенерация резервных кодов
-        
+        Regenerate backup codes
         Args:
-            user: Объект пользователя
-            token: Токен 2FA для подтверждения
-            
+            user: User object
+            token: 2FA token for confirmation
         Returns:
             tuple: (success, message, backup_codes)
         """
         if not user.two_factor_enabled:
-            return False, "2FA не включена", None
+            return False, "2FA is not enabled", None
         
-        # Проверяем токен
+        # Verify token
         if not TwoFactorAuth.verify_2fa_token(user, token):
-            return False, "Неверный токен", None
+            return False, "Incorrect token", None
         
-        # Генерируем новые коды
+        # Generate new codes
         backup_codes = user.generate_backup_codes()
         
-        # Логируем действие
+        # Log action
         log_audit('2fa_backup_regenerated', 'user', user.id, 'Regenerated backup codes')
         
         db.session.commit()
-        return True, "Резервные коды обновлены", backup_codes
+        return True, "Backup codes updated", backup_codes
     
     @staticmethod
     def check_rate_limit(username, ip_address):
         """
-        Проверка лимита попыток входа
-        
+        Check login attempt rate limit
         Args:
-            username: Имя пользователя
-            ip_address: IP адрес
+            username: Username
+            ip_address: IP address
             
         Returns:
             tuple: (allowed, wait_time_seconds)
         """
-        # Лимиты: максимум 5 попыток за 15 минут
+        # Limit: maximum 5 attempts within 15 minutes
         time_threshold = datetime.utcnow() - timedelta(minutes=15)
         
-        # Подсчитываем попытки по IP
+        # Count attempts by IP
         ip_attempts = FailedLoginAttempt.query.filter(
             FailedLoginAttempt.ip_address == ip_address,
             FailedLoginAttempt.attempted_at >= time_threshold
         ).count()
         
-        # Подсчитываем попытки по username
+        # Count attempts by username
         user_attempts = FailedLoginAttempt.query.filter(
             FailedLoginAttempt.username == username,
             FailedLoginAttempt.attempted_at >= time_threshold
@@ -234,7 +222,7 @@ class TwoFactorAuth:
         max_attempts = 5
         
         if ip_attempts >= max_attempts or user_attempts >= max_attempts:
-            # Находим самую старую попытку в пределах окна
+            # Find the oldest attempt within the window
             oldest_attempt = FailedLoginAttempt.query.filter(
                 FailedLoginAttempt.ip_address == ip_address,
                 FailedLoginAttempt.attempted_at >= time_threshold
@@ -246,16 +234,14 @@ class TwoFactorAuth:
                 return False, max(0, int(wait_seconds))
         
         return True, 0
-    
     @staticmethod
     def record_failed_attempt(username, admin_id=None, reason='wrong_password'):
         """
-        Запись неудачной попытки входа
-        
+        Record failed login attempt
         Args:
-            username: Имя пользователя
-            admin_id: ID администратора (если известен)
-            reason: Причина неудачи
+            username: Username
+            admin_id: ID of administrator (if known)
+            reason: Reason for failure
         """
         attempt = FailedLoginAttempt(
             username=username,
@@ -271,32 +257,31 @@ class TwoFactorAuth:
     @staticmethod
     def clear_failed_attempts(username):
         """
-        Очистка неудачных попыток после успешного входа
-        
+        Clear failed attempts after successful login
         Args:
-            username: Имя пользователя
+            username: Username
         """
         FailedLoginAttempt.query.filter_by(username=username).delete()
         db.session.commit()
 
-# Декораторы для защиты маршрутов 2FA
+# Decorators for protecting 2FA routes
 def require_2fa_setup(f):
-    """Декоратор требует настройки 2FA (но не обязательно включения)"""
+    """Decorator requires 2FA setup (but not necessarily enabling)"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not hasattr(request, 'current_user'):
             return jsonify({
                 'success': False,
-                'message': 'Требуется аутентификация'
+                'message': 'Authentication required'
             }), 401
         
         user = request.current_user
         
-        # Если 2FA уже настроена, возвращаем информацию
+        # If 2FA is already set up, return information
         if user.two_factor_secret:
             return jsonify({
                 'success': False,
-                'message': '2FA уже настроена',
+                'message': '2FA is already set up',
                 'two_factor_enabled': user.two_factor_enabled
             }), 400
         
@@ -304,13 +289,13 @@ def require_2fa_setup(f):
     return decorated_function
 
 def require_2fa_enabled(f):
-    """Декоратор требует включенной 2FA"""
+    """Decorator requires enabled 2FA"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not hasattr(request, 'current_user'):
             return jsonify({
                 'success': False,
-                'message': 'Требуется аутентификация'
+                'message': 'Authentication required'
             }), 401
         
         user = request.current_user
@@ -318,7 +303,7 @@ def require_2fa_enabled(f):
         if not user.two_factor_enabled:
             return jsonify({
                 'success': False,
-                'message': '2FA не включена. Сначала включите двухфакторную аутентификацию.'
+                'message': '2FA is not enabled. Enable two-factor authentication first.'
             }), 403
         
         return f(*args, **kwargs)

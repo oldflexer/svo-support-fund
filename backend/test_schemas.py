@@ -8,7 +8,7 @@ import json
 class TestSchemas(unittest.TestCase):
     
     def test_login_schema_valid(self):
-        """Тест валидных данных для логина"""
+        """Test valid login data"""
         data = {
             'username': 'testuser',
             'password': 'password123'
@@ -19,12 +19,11 @@ class TestSchemas(unittest.TestCase):
             self.assertEqual(validated['username'], 'testuser')
             self.assertEqual(validated['password'], 'password123')
         except ValidationError:
-            self.fail('Валидные данные не должны вызывать ошибку')
-    
+            self.fail('Valid data should not raise an error')
     def test_login_schema_invalid(self):
-        """Тест невалидных данных для логина"""
+        """Test invalid login data"""
         data = {
-            'username': '',  # Пустое имя пользователя
+            'username': '',  # Empty username
             'password': ''
         }
         
@@ -36,7 +35,7 @@ class TestSchemas(unittest.TestCase):
         self.assertIn('password', errors)
     
     def test_admin_create_schema_valid(self):
-        """Тест валидных данных для создания администратора"""
+        """Test valid admin creation data"""
         data = {
             'username': 'new_admin',
             'email': 'admin@example.com',
@@ -50,11 +49,11 @@ class TestSchemas(unittest.TestCase):
         self.assertEqual(validated['role'], 'moderator')
     
     def test_admin_create_schema_weak_password(self):
-        """Тест слабого пароля"""
+        """Test weak password"""
         data = {
             'username': 'test',
             'email': 'test@example.com',
-            'password': 'weak'  # Слишком короткий
+            'password': 'weak'  # Too short
         }
         
         with self.assertRaises(ValidationError) as context:
@@ -64,7 +63,7 @@ class TestSchemas(unittest.TestCase):
         self.assertIn('password', errors)
     
     def test_fighter_create_schema_valid(self):
-        """Тест валидных данных для создания бойца"""
+        """Test valid fighter creation data"""
         data = {
             'call_sign': 'Волк',
             'unit': '7-я дивизия',
@@ -80,7 +79,7 @@ class TestSchemas(unittest.TestCase):
         self.assertEqual(len(validated['needs']), 2)
     
     def test_donation_create_schema_valid(self):
-        """Тест валидных данных для пожертвования"""
+        """Test valid donation data"""
         data = {
             'name': 'Иван Иванов',
             'amount': 1000.0,
@@ -93,10 +92,10 @@ class TestSchemas(unittest.TestCase):
         self.assertEqual(validated['message'], 'Поддерживаю наших героев!')
     
     def test_donation_create_schema_small_amount(self):
-        """Тест слишком маленького пожертвования"""
+        """Test too small donation"""
         data = {
             'name': 'Тест',
-            'amount': 50.0  # Меньше минимального
+            'amount': 50.0  # Below minimum
         }
         
         with self.assertRaises(ValidationError) as context:
@@ -106,24 +105,24 @@ class TestSchemas(unittest.TestCase):
         self.assertIn('amount', errors)
     
     def test_xss_protection(self):
-        """Тест защиты от XSS"""
+        """Test XSS protection"""
         malicious_data = {
             'username': 'test',
             'password': 'password123',
             'message': '<script>alert("xss")</script>Hello'
         }
         
-        # Тестируем очистку через sanitize_input
+        # Test sanitization through sanitize_input
         from schemas import sanitize_input
         cleaned = sanitize_input(malicious_data['message'])
         self.assertNotIn('<script>', cleaned)
         self.assertIn('&lt;script&gt;', cleaned)
     
     def test_schema_missing_required(self):
-        """Тест отсутствия обязательных полей"""
+        """Test missing required fields"""
         data = {
             'username': 'test'
-            # password отсутствует
+            # password missing
         }
         
         with self.assertRaises(ValidationError) as context:
