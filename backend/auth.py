@@ -1,8 +1,8 @@
-import jwt
-import datetime
+from functools import wraps
 from flask import request, jsonify, current_app
 from models import AdminUser, AuditLog, db
-from functools import wraps  # Добавлен импорт
+import jwt
+import datetime
 
 class AuthError(Exception):
     """Exception for authentication errors"""
@@ -12,8 +12,8 @@ def create_refresh_token(user_id):
     """Create refresh token"""
     try:
         payload = {
-            'exp': datetime.datetime.utcnow() + current_app.config['JWT_REFRESH_TOKEN_EXPIRES'],
-            'iat': datetime.datetime.utcnow(),
+            'exp': datetime.datetime.now(datetime.timezone.utc) + current_app.config['JWT_REFRESH_TOKEN_EXPIRES'],
+            'iat': datetime.datetime.now(datetime.timezone.utc),
             'sub': user_id,
             'type': 'refresh'
         }
@@ -84,7 +84,7 @@ def login_required(func, require_2fa=False):
                     raise AuthError('2FA verification required')
             
             # Add user to request context
-            request.current_user = user
+            request.current_user = user # type: ignore
             return func(*args, **kwargs)
         
         except AuthError as e:
@@ -123,7 +123,7 @@ def role_required(*roles):
         @wraps(f)
         @login_required
         def decorated_function(*args, **kwargs):
-            if request.current_user.role not in roles:
+            if request.current_user.role not in roles: # type: ignore
                 return jsonify({
                     'success': False,
                     'message': 'Insufficient permissions'
@@ -136,7 +136,7 @@ def log_audit(action, entity_type=None, entity_id=None, details=None):
     """Log admin actions"""
     if hasattr(request, 'current_user'):
         audit_log = AuditLog(
-            admin_id=request.current_user.id,
+            admin_id=request.current_user.id, # type: ignore
             action=action,
             entity_type=entity_type,
             entity_id=entity_id,

@@ -2,6 +2,8 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import pyotp
+import secrets
+import json
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -77,8 +79,7 @@ class AdminUser(db.Model):
     
     def generate_backup_codes(self, count=10):
         """Generate backup codes"""
-        import secrets
-        import json
+        
         
         backup_codes = []
         for _ in range(count):
@@ -121,62 +122,18 @@ class FailedLoginAttempt(db.Model):
     user_agent = db.Column(db.Text)
     attempted_at = db.Column(db.DateTime, default=datetime.utcnow)
     reason = db.Column(db.String(100))  # 'wrong_password', '2fa_failed', etc.
-    
-class UnitRequest(db.Model):
-    """Unit requests"""
-    id = db.Column(db.Integer, primary_key=True)
-    unit_name = db.Column(db.String(200), nullable=False)  # Name of the unit
-    unit_commander = db.Column(db.String(150), nullable=False)  # Commander of the unit
-    contact_person = db.Column(db.String(150), nullable=False)  # Contact person
-    phone = db.Column(db.String(20), nullable=False)  # Contact phone
-    email = db.Column(db.String(120))  # Email
-    region = db.Column(db.String(100), nullable=False)  # Region of deployment
-    needs = db.Column(db.Text, nullable=False)  # JSON with needs
-    urgency = db.Column(db.String(50), default='usually')  # Urgency
-    quantity = db.Column(db.Integer, nullable=False)  # Number of fighters
-    additional_info = db.Column(db.Text)  # Additional information
-    status = db.Column(db.String(50), default='new')  # Status: new, in processing, completed, rejected
-    verification_status = db.Column(db.String(50), default='not verified')  # Verification status
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
-    
-    # Relationship with the administrator processing the request
-    assigned_admin_id = db.Column(db.Integer, db.ForeignKey('admin_user.id'))
-    assigned_admin = db.relationship('AdminUser', backref='unit_requests')
-    
-    # Relationship with donations for this request
-    donation_id = db.Column(db.Integer, db.ForeignKey('donation.id'))
-    donation = db.relationship('Donation', backref='unit_request', lazy=True)
-        
-class AssistanceType(db.Model):
-    """Assistance types"""
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    icon = db.Column(db.String(50))
-    category = db.Column(db.String(50))  # 'medicine', 'equipment', 'gear', 'other'
 
 class Donation(db.Model):
     """Donations"""
     id = db.Column(db.Integer, primary_key=True)
     donor_name = db.Column(db.String(100))
     amount = db.Column(db.Float, nullable=False)
-    assistance_type_id = db.Column(db.Integer, db.ForeignKey('assistance_type.id'))
     message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_anonymous = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(50), default='waiting')  # 'waiting', 'processed', 'sent'
     
     assistance_type = db.relationship('AssistanceType', backref='donations')
-
-class EquipmentRequest(db.Model):
-    """Equipment requests"""
-    id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(200), nullable=False)
-    quantity = db.Column(db.Integer, default=1)
-    urgency = db.Column(db.String(50))  # 'critical', 'urgent', 'usual'
-    status = db.Column(db.String(50), default='needed')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
 class Volunteer(db.Model):
     """Volunteers"""
@@ -189,16 +146,6 @@ class Volunteer(db.Model):
     can_deliver = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
-
-class Delivery(db.Model):
-    """Deliveries of assistance"""
-    id = db.Column(db.Integer, primary_key=True)
-    volunteer_id = db.Column(db.Integer, db.ForeignKey('volunteer.id'))
-    destination = db.Column(db.String(300))
-    status = db.Column(db.String(50), default='planned')
-    departure_date = db.Column(db.DateTime)
-    estimated_arrival = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class NewsArticle(db.Model):
     """News and frontline reports"""
