@@ -1,4 +1,10 @@
-backend/__pycache__/
-backend/instance/svo_fund.db
-backend/venv/
-instance/svo_fund.db
+.gitignore
+__pycache__/
+.memory/
+.venv/
+.vscode/
+instance/*
+static/docs/*
+uploads/*
+project_structure_mermaid.md
+svo_support_fund.code-workspace

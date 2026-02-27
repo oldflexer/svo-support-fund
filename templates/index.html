@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Фонд "Защитим Родину"</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <link rel="icon" type="image/x-icon" sizes="48x48" href="img/favicon.ico">
+    <link rel="icon" type="image/png" href="../static/img/logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
     <div id="app">
@@ -18,19 +18,15 @@
             <nav class="navbar">
                 <div class="container">
                     <div class="nav-brand" href="#start" @click.prevent="scrollTo('start')">
-                        <!-- <i class="fas fa-shield-alt logo-icon"></i> -->
-                        <img src="img/logo.svg" width="64" height="64">
+                        <img src="../static/img/logo.png" width="64" height="64">
                         <span class="logo-text">Защитим Родину</span>
                     </div>
                     <div class="nav-menu">
-                        <a href="#requests" @click.prevent="scrollTo('requests')" class="nav-link">Прием заявок от подразделений</a>
-                        <a href="#needs" @click.prevent="scrollTo('needs')" class="nav-link">Текущие сборы</a>
-                        <a href="#volunteer" @click.prevent="scrollTo('volunteer')" class="nav-link">Ищем партнеров</a>
-                        <a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Фронтовые сводки</a>
+                        <a href="#current-drives" @click.prevent="scrollTo('current-drives')" class="nav-link">Текущие сборы</a>
+                        <a href="#news" @click.prevent="scrollTo('news')" class="nav-link">Новости и события</a>
+                        <a href="#volunteer" @click.prevent="scrollTo('volunteer')" class="nav-link">Ищем волонтёров</a>
                         <a href="#about" @click.prevent="scrollTo('about')" class="nav-link">О фонде</a>
                         <a href="#contacts" @click.prevent="scrollTo('contacts')" class="nav-link">Контакты</a>
-                        <!-- <a href="#fighters" @click.prevent="scrollTo('fighters')" class="nav-link">Наши бойцы</a>
-                        <a href="#donate" @click.prevent="scrollTo('donate')" class="nav-link">Помочь</a> -->
                     </div>
                     <div class="nav-actions">
                         <button @click="showDonationModal = true" class="btn-primary">
@@ -49,35 +45,28 @@
                         Фонд содействия в выполнении задач Специальной Военной Операции.<br>
                     </p>
                     <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
-                        Фонд для выполнения подразделениями боевых задач в зоне проведения Специальной Военной Операции<br>
-                        оказывает содействие в поставках БПЛА, станций РЭБ, средств связи, источников электроэнергии, транспортных средств.<br>
+                        Фонд оказывает содействие подразделениям для выполнения боевых задач в зоне проведения Специальной Военной Операции<br>
+                         в поставках БПЛА, станций РЭБ, средств связи, источников электроэнергии, транспортных средств.<br>
                     </p>
                     <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
                         Фонд оказывает содействие в организации курортно-санаторного лечения участникам СВО, получившим ранения.<br>
                     </p>
                     <div class="hero-stats animate__animated animate__fadeInUp animate__delay-2s">
                         <div class="stat-item">
-                            <div class="stat-number">{{ stats.total_fighters || '0' }}</div>
-                            <div class="stat-label">Бойцов получили помощь</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-number">{{ formatCurrency(stats.total_donated) || '0 ₽' }}</div>
+                            <div class="stat-number">${ formatCurrency(stats.total_donated) || '0 ₽' }</div>
                             <div class="stat-label">Собрано средств</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">{{ stats.total_volunteers || '0' }}</div>
+                            <div class="stat-number">${ stats.total_volunteers || '0' }</div>
                             <div class="stat-label">Волонтёров</div>
                         </div>
                     </div>
                     <div class="hero-actions">
-                        <!-- <button @click="showDonationModal = true" class="btn-hero btn-primary">
-                            <i class="fas fa-donate"></i> Сделать пожертвование
-                        </button> -->
                         <button @click.prevent="scrollTo('donate')" class="btn-hero btn-primary">
-                            <i class="fas fa-donate"></i> Сделать пожертвование
+                            <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
                         </button>
-                        <button @click="scrollTo('fighters')" class="btn-hero btn-secondary">
-                            <i class="fas fa-users"></i> Узнать истории
+                        <button @click="scrollTo('current-drives')" class="btn-hero btn-secondary">
+                            <i class="fas fa-users"></i> Текущие потребности
                         </button>
                     </div>
                 </div>
@@ -86,138 +75,152 @@
 
         <!-- Main Content -->
         <main class="container">
-            <!-- Прием заявок от подразделений -->
-             <section id="requests" class="section">
+            <!-- Текущие сборы -->
+            <section id="current-drives" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-parachute-box"></i> Прием заявок от подразделений
+                    <i class="fas fa-hand-holding-heart"></i> Текущие сборы
                 </h2>
-                <div class="requests-section">
-                                        
-                    <div class="requests-form-card">
-                        <h3>Анкета подразделения</h3>
-                        <form @submit.prevent="submitVolunteer" class="requests-form">
-                            <div class="form-group">
-                                <label><i class="fas fa-user"></i> ФИО</label>
-                                <input type="text" v-model="volunteerForm.name" required>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fas fa-envelope"></i> Email</label>
-                                    <input type="email" v-model="volunteerForm.email" required>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fas fa-phone"></i> Телефон</label>
-                                    <input type="tel" v-model="volunteerForm.phone">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label><i class="fas fa-map-marker-alt"></i> Город</label>
-                                <input type="text" v-model="volunteerForm.city" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label><i class="fas fa-tools"></i> Ваши навыки и возможности</label>
-                                <textarea v-model="volunteerForm.skills" placeholder="Что вы можете сделать? Есть ли автомобиль? И т.д." rows="3"></textarea>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" v-model="volunteerForm.can_deliver">
-                                    <span>Могу участвовать в доставке помощи</span>
-                                </label>
-                            </div>
-                            
-                            <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
-                                <i class="fas fa-user-plus"></i> 
-                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Срочные потребности -->
-            <section id="needs" class="section">
-                <h2 class="section-title">
-                    <i class="fas fa-exclamation-triangle"></i> Срочные потребности
-                </h2>
-                <div class="urgent-needs">
-                    <div v-for="need in urgentNeeds" :key="need.fighter_id + need.need" class="need-card">
-                        <div class="need-urgency">
-                            <i class="fas fa-clock"></i> Срочно
-                        </div>
-                        <div class="need-content">
-                            <h3>{{ need.need }}</h3>
-                            <p>Для {{ need.fighter_call_sign }} • {{ need.region }}</p>
-                            <button @click="donateToFighter(need.fighter_id)" class="btn-small">
-                                Помочь
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Наши бойцы -->
-            <!-- <section id="fighters" class="section">
-                <h2 class="section-title">
-                    <i class="fas fa-user-shield"></i> Наши защитники
-                </h2>
-                <div class="filters">
-                    <button @click="filterFighters(null)" :class="{active: activeFilter === null}" class="filter-btn">
-                        Все
-                    </button>
-                    <button @click="filterFighters('активный')" :class="{active: activeFilter === 'активный'}" class="filter-btn">
-                        Активные
-                    </button>
-                    <button @click="filterFighters('ранен')" :class="{active: activeFilter === 'ранен'}" class="filter-btn">
-                        Раненые
-                    </button>
-                    <button @click="filterFighters(1)" :class="{active: activeFilter === 1}" class="filter-btn">
-                        Высокий приоритет
-                    </button>
-                </div>
                 
-                <div class="fighters-grid">
-                    <div v-for="fighter in filteredFighters" :key="fighter.id" class="fighter-card">
-                        <div class="fighter-header">
-                            <div class="fighter-status" :class="fighter.status_class">
-                                {{ fighter.status }}
+                <div class="current-drives">
+                    <div v-for="drive in filteredDrives" :key="drive.id" class="drive-card">
+                        <div class="drive-header" :class="drive.urgency_class">
+                            <div class="drive-urgency">
+                                <i :class="getUrgencyIcon(drive.urgency)"></i> ${ getUrgencyText(drive.urgency) }
                             </div>
-                            <div v-if="fighter.is_verified" class="fighter-verified">
-                                <i class="fas fa-check-circle"></i> Проверен
+                            <div class="drive-status">
+                                ${ drive.status }
                             </div>
                         </div>
-                        <div class="fighter-photo" :style="{backgroundImage: `url(${fighter.photo_url || 'https://images.unsplash.com/photo-1549887552-8d4b0a63a8f5?w=400'})`}">
-                            <div class="fighter-callsign">{{ fighter.call_sign }}</div>
-                        </div>
-                        <div class="fighter-info">
-                            <h3>{{ fighter.call_sign }}</h3>
-                            <p><i class="fas fa-map-marker-alt"></i> {{ fighter.region }}</p>
-                            <p><i class="fas fa-flag"></i> {{ fighter.unit }}</p>
-                            
-                            <div class="fighter-needs">
-                                <h4><i class="fas fa-tools"></i> Нуждается в:</h4>
+                        
+                        <div class="drive-content">
+                            <div class="drive-needs">
+                                <h4><i class="fas fa-tools"></i> Необходимо:</h4>
                                 <ul>
-                                    <li v-for="(need, index) in fighter.needs.slice(0, 3)" :key="index">
-                                        {{ need }}
+                                    <li v-for="(need, index) in drive.needs.slice(0, 3)" :key="index">
+                                        ${ need }
+                                    </li>
+                                    <li v-if="drive.needs.length > 3" class="more-items">
+                                        и ещё ${ drive.needs.length - 3 } позиций...
                                     </li>
                                 </ul>
                             </div>
                             
-                            <div class="fighter-actions">
-                                <button @click="viewFighterDetails(fighter.id)" class="btn-small">
-                                    <i class="fas fa-info-circle"></i> Подробнее
+                            <div class="drive-progress">
+                                <div class="progress-info">
+                                    <div class="progress-amounts">
+                                        <span class="collected">${ formatCurrency(drive.progress.collected) }</span>
+                                        <span class="needed">из ${ formatCurrency(drive.progress.needed) }</span>
+                                    </div>
+                                    <div class="progress-percentage">
+                                        ${ drive.progress.percentage }%
+                                    </div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" :style="{width: drive.progress.percentage + '%'}"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="drive-actions">
+                                <button @click="showDonationForDrive(drive.id)" class="btn-small btn-primary">
+                                    <i href="#donate" @click.prevent="scrollTo('donate')" class="fas fa-donate"></i> Поддержать сбор
                                 </button>
-                                <button @click="donateToFighter(fighter.id)" class="btn-small btn-primary">
-                                    <i class="fas fa-hand-holding-heart"></i> Поддержать
+                                <button @click="viewDriveDetails(drive.id)" class="btn-small">
+                                    <i class="fas fa-info-circle"></i> Подробнее
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section> -->
+                
+                <div v-if="filteredDrives.length === 0" class="no-drives">
+                    <i class="fas fa-inbox"></i>
+                    <h3>Нет активных сборов</h3>
+                </div>
+
+                <button @click.prevent="scrollTo('donate')" class="btn-donate">
+                    <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
+                </button>
+            </section>
+            
+
+            <!-- Новости -->
+            <section id="news" class="section">
+                <h2 class="section-title">
+                    <i class="fas fa-newspaper"></i> Новости и фронтовые сводки
+                </h2>
+                
+                <div class="news-filters">
+                    <button @click="setNewsFilter(null)" :class="{active: newsFilter === null}" class="filter-btn">
+                        Все
+                    </button>
+                    <button @click="setNewsFilter('новости')" :class="{active: newsFilter === 'новости'}" class="filter-btn">
+                        Новости фонда
+                    </button>
+                    <button @click="setNewsFilter('отчёт')" :class="{active: newsFilter === 'отчёт'}" class="filter-btn">
+                        Отчёты о помощи
+                    </button>
+                    <button @click="setNewsFilter('история')" :class="{active: newsFilter === 'история'}" class="filter-btn">
+                        Истории
+                    </button>
+                </div>
+                
+                <div class="news-grid">
+                    <!-- Главная новость (featured) -->
+                    <div v-if="featuredArticle" class="featured-article" @click="viewArticle(featuredArticle.slug)">
+                        <div class="featured-image" :style="{backgroundImage: `url(${featuredArticle.main_image || 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=800'})`}">
+                            <div class="featured-overlay">
+                                <div class="featured-category">${ getCategoryName(featuredArticle.category) }</div>
+                                <div v-if="featuredArticle.is_verified" class="featured-verified">
+                                    <i class="fas fa-check-circle"></i> Проверено
+                                </div>
+                            </div>
+                        </div>
+                        <div class="featured-content">
+                            <h3>${ featuredArticle.title }</h3>
+                            <p class="featured-excerpt">${ featuredArticle.excerpt }</p>
+                            <div class="featured-meta">
+                                <span class="meta-item">
+                                    <i class="far fa-calendar"></i> ${ featuredArticle.published_at }
+                                </span>
+                                <span class="meta-item">
+                                    <i class="far fa-clock"></i> ${ featuredArticle.read_time } мин. чтения
+                                </span>
+                                <span class="meta-item">
+                                    <i class="far fa-eye"></i> ${ featuredArticle.views_count }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Остальные новости -->
+                    <div v-for="article in filteredNews" :key="article.id" class="news-card" @click="viewArticle(article.slug)">
+                        <div class="news-image" :style="{backgroundImage: `url(${article.main_image || 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w-400'})`}">
+                            <div class="news-category">${ getCategoryName(article.category) }</div>
+                        </div>
+                        <div class="news-content">
+                            <h4>${ article.title }</h4>
+                            <p class="news-excerpt">${ article.excerpt }</p>
+                            <div class="news-meta">
+                                <span class="meta-item">
+                                    <i class="far fa-calendar"></i> ${ article.published_at }
+                                </span>
+                                <span v-if="article.region" class="meta-item">
+                                    <i class="fas fa-map-marker-alt"></i> ${ article.region }
+                                </span>
+                            </div>
+                            <div class="news-tags">
+                                <span v-for="tag in article.tags.slice(0, 2)" :key="tag" class="tag">
+                                    ${ tag }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button @click.prevent="scrollTo('donate')" class="btn-donate">
+                    <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
+                </button>
+            </section>
 
             <!-- Волонтёрство -->
             <section id="volunteer" class="section">
@@ -289,22 +292,9 @@
                             
                             <button type="submit" class="btn-primary btn-block" :disabled="volunteerLoading">
                                 <i class="fas fa-user-plus"></i> 
-                                {{ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }}
+                                ${ volunteerLoading ? 'Отправка...' : 'Стать волонтёром' }
                             </button>
                         </form>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Новости -->
-            <section id="news" class="section">
-                <h2 class="section-title">
-					<i class="fas fa-newspaper"></i> Новости фонда
-                </h2>
-                <div class="news-content">
-                    <div class="news-text">
-                        <h3>Новость 1</h3>
-                        <p>Текст 1</p>
                     </div>
                 </div>
             </section>
@@ -362,6 +352,10 @@
                         </div>
                     </div>
                 </div>
+
+                <button @click.prevent="scrollTo('donate')" class="btn-donate">
+                    <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
+                </button>
             </section>
 
             <!-- Контакты -->
@@ -379,13 +373,16 @@
                         </div>
                     </div>
                 </div>
-            </section>
 
+                <button @click.prevent="scrollTo('donate')" class="btn-donate">
+                    <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
+                </button>
+            </section>
 
             <!-- Форма пожертвования -->
             <section id="donate" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-handshake-simple"></i> Поддержать фонд
+                    <i class="fas fa-parachute-box"></i> Поддержать фонд
                 </h2>
                 <div class="donation-section">
                     <div class="donation-info">
@@ -411,7 +408,7 @@
                                 </div>
                                 <div class="tip-card">
                                     <div class="tip-amount">50 000 ₽</div>
-                                    <div class="tip-desc">Спутниковый телефон</div>
+                                    <div class="tip-desc">Спутниковый телефон на неделю</div>
                                 </div>
                                 <div class="tip-card">
                                     <div class="tip-amount">300 000 ₽</div>
@@ -449,16 +446,6 @@
                             </div>
                             
                             <div class="form-group">
-                                <label><i class="fas fa-shield-alt"></i> Тип помощи (опционально)</label>
-                                <select v-model="donationForm.assistance_type_id">
-                                    <option value="">Выберите направление</option>
-                                    <option v-for="type in assistanceTypes" :value="type.id">
-                                        {{ type.category_ru }}: {{ type.name }}
-                                    </option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
                                 <label><i class="fas fa-edit"></i> Ваше сообщение бойцам (опционально)</label>
                                 <textarea v-model="donationForm.message" placeholder="Напишите несколько слов поддержки..." rows="3"></textarea>
                             </div>
@@ -472,7 +459,7 @@
                             
                             <button type="submit" class="btn-primary btn-block" :disabled="donationLoading">
                                 <i class="fas fa-paper-plane"></i> 
-                                {{ donationLoading ? 'Отправка...' : 'Отправить пожертвование' }}
+                                ${ donationLoading ? 'Отправка...' : 'Отправить пожертвование' }
                             </button>
                         </form>
                     </div>
@@ -485,19 +472,19 @@
             <div class="container">
                 <div class="footer-content">
                     <div class="footer-brand">
-                        <!-- <i class="fas fa-shield-alt logo-icon"></i> -->
-                        <img src="img/logo.svg" width="64" height="64">
+                        <img src="../static/img/logo.png" width="64" height="64">
                         <span class="logo-text">Защитим Родину</span>
                         <p class="footer-slogan">Вместе мы сила. Вместе мы поможем.</p>
                     </div>
                     
                     <div class="footer-links">
                         <h4>Быстрые ссылки</h4>
-                        <a @click.prevent="scrollTo('fighters')">Наши бойцы</a>
-                        <a @click.prevent="scrollTo('donate')">Сделать пожертвование</a>
-                        <a @click.prevent="scrollTo('volunteer')">Волонтёрство</a>
-						<a @click.prevent="scrollTo('news')">Новости</a>
+                        <a @click.prevent="scrollTo('current-drives')">Текущие сборы</a>
+                        <a @click.prevent="scrollTo('news')">Новости и события</a>
+                        <a @click.prevent="scrollTo('volunteer')">Ищем волонтёров</a>
                         <a @click.prevent="scrollTo('about')">О фонде</a>
+                        <a @click.prevent="scrollTo('contacts')">Контакты</a>
+                        <a @click.prevent="scrollTo('donate')">Сделать пожертвование</a>
                     </div>
                     
                     <div class="footer-legal">
@@ -544,7 +531,7 @@
                         </div>
                         
                         <button type="submit" class="btn-primary btn-block">
-                            Поддержать {{ donationForm.amount }} ₽
+                            Поддержать ${ donationForm.amount } ₽
                         </button>
                     </form>
                 </div>
@@ -554,11 +541,10 @@
         <!-- Уведомление -->
         <div v-if="notification.show" :class="['notification', notification.type]">
             <i :class="notification.icon"></i>
-            <span>{{ notification.message }}</span>
+            <span>${ notification.message }</span>
             <button @click="notification.show = false" class="notification-close">&times;</button>
         </div>
     </div>
-
-    <script src="app.js"></script>
+    <script src="../static/js/app.js"></script>
 </body>
 </html>

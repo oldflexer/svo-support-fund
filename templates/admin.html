@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админ панель</title>
-    <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../static/css/admin.css">
+    <link rel="stylesheet" href="../static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500&display=swap">
+    <link rel="icon" type="image/png" href="../static/img/logo.png">
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="admin-app">
@@ -17,7 +18,7 @@
         <div v-if="!isAuthenticated" class="login-container">
             <div class="login-card">
                 <div class="login-header">
-                    <i class="fas fa-shield-alt logo-icon"></i>
+                    <img src="../static/img/logo.png" width="64" height="64">
                     <h2>Админ панель</h2>
                     <p>Фонд "Защитим Родину"</p>
                 </div>
@@ -35,21 +36,21 @@
                     
                     <button type="submit" class="btn-primary btn-block" :disabled="loading">
                         <i class="fas fa-sign-in-alt"></i> 
-                        {{ loading ? 'Вход...' : 'Войти' }}
+                        ${ loading ? 'Вход...' : 'Войти' }
                     </button>
                     
                     <div v-if="loginError" class="alert alert-error">
-                        <i class="fas fa-exclamation-circle"></i> {{ loginError }}
+                        <i class="fas fa-exclamation-circle"></i> ${ loginError }
                     </div>
                 </form>
                 
-                <!--
+                
 				<div class="login-footer">
                     <p>Тестовые доступы:</p>
                     <p><strong>admin / Admin123!</strong> - полный доступ</p>
                     <p><strong>moderator / Moderator123!</strong> - модератор</p>
                 </div>
-				-->
+				
             </div>
         </div>
 
@@ -60,9 +61,9 @@
                 <div class="sidebar-header">
                     <i class="fas fa-shield-alt logo-icon"></i>
                     <h3>Админ панель</h3>
-                    <p>{{ currentUser.full_name || currentUser.username }}</p>
+                    <p>${ currentUser.full_name || currentUser.username }</p>
                     <small class="role-badge" :class="currentUser.role">
-                        {{ roleLabels[currentUser.role] }}
+                        ${ roleLabels[currentUser.role] }
                     </small>
                 </div>
                 
@@ -79,17 +80,13 @@
                     
                     <div class="nav-section">
                         <h4><i class="fas fa-users"></i> Управление</h4>
-                        <a @click="setActiveTab('fighters')" :class="{active: activeTab === 'fighters'}">
-                            <i class="fas fa-user-shield"></i> Бойцы
-                            <span class="badge">{{ fighters.length }}</span>
-                        </a>
                         <a @click="setActiveTab('donations')" :class="{active: activeTab === 'donations'}">
                             <i class="fas fa-donate"></i> Пожертвования
-                            <span class="badge">{{ donations.total || 0 }}</span>
+                            <span class="badge">${ donations.total || 0 }</span>
                         </a>
                         <a @click="setActiveTab('volunteers')" :class="{active: activeTab === 'volunteers'}">
                             <i class="fas fa-hands-helping"></i> Волонтёры
-                            <span class="badge">{{ volunteers.total || 0 }}</span>
+                            <span class="badge">${ volunteers.total || 0 }</span>
                         </a>
                     </div>
                     
@@ -119,13 +116,13 @@
                 <!-- Шапка -->
                 <header class="content-header">
                     <div class="header-left">
-                        <h1>{{ getTabTitle() }}</h1>
-                        <p>{{ getTabDescription() }}</p>
+                        <h1>${ getTabTitle() }</h1>
+                        <p>${ getTabDescription() }</p>
                     </div>
                     <div class="header-right">
                         <div class="user-info">
                             <i class="fas fa-user-circle"></i>
-                            <span>{{ currentUser.username }}</span>
+                            <span>${ currentUser.username }</span>
                         </div>
                         <button @click="refreshToken" class="btn-refresh" title="Обновить токен">
                             <i class="fas fa-sync-alt"></i>
@@ -141,11 +138,11 @@
                                 <i class="fas fa-donate"></i>
                             </div>
                             <div class="stat-content">
-                                <h3>{{ formatCurrency(stats.donations?.total_amount || 0) }}</h3>
+                                <h3>${ formatCurrency(stats.donations?.total_amount || 0) }</h3>
                                 <p>Всего собрано</p>
                                 <div class="stat-trend">
                                     <i class="fas fa-arrow-up"></i>
-                                    <span>12% за неделю</span>
+                                    <span>${ stats.donations?.total_amount || 0 }% за неделю</span>
                                 </div>
                             </div>
                         </div>
@@ -155,18 +152,8 @@
                                 <i class="fas fa-user-shield"></i>
                             </div>
                             <div class="stat-content">
-                                <h3>{{ stats.donations?.total || 0 }}</h3>
+                                <h3>${ stats.donations?.total || 0 }</h3>
                                 <p>Пожертвований</p>
-                            </div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3>{{ stats.fighters?.total || 0 }}</h3>
-                                <p>Бойцов</p>
                             </div>
                         </div>
                         
@@ -175,7 +162,7 @@
                                 <i class="fas fa-hands-helping"></i>
                             </div>
                             <div class="stat-content">
-                                <h3>{{ stats.volunteers?.total || 0 }}</h3>
+                                <h3>${ stats.volunteers?.total || 0 }</h3>
                                 <p>Волонтёров</p>
                             </div>
                         </div>
@@ -190,102 +177,16 @@
                             <div class="recent-list">
                                 <div v-for="donation in recentDonations" :key="donation.id" class="recent-item">
                                     <div class="recent-info">
-                                        <strong>{{ donation.donor_name }}</strong>
-                                        <span class="amount">{{ formatCurrency(donation.amount) }}</span>
+                                        <strong>${ donation.donor_name }</strong>
+                                        <span class="amount">${ formatCurrency(donation.amount) }</span>
                                     </div>
                                     <div class="recent-meta">
-                                        <span class="status" :class="donation.status">{{ donation.status }}</span>
-                                        <span class="date">{{ formatDate(donation.created_at) }}</span>
+                                        <span class="status" :class="donation.status">${ donation.status }</span>
+                                        <span class="date">${ formatDate(donation.created_at) }</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Управление бойцами -->
-                <div v-if="activeTab === 'fighters'" class="tab-content">
-                    <div class="tab-header">
-                        <h2><i class="fas fa-user-shield"></i> Управление бойцами</h2>
-                        <div class="tab-actions">
-                            <button @click="showFighterModal = true" class="btn-primary" 
-                                    v-if="hasPermission(['admin', 'moderator'])">
-                                <i class="fas fa-plus"></i> Добавить бойца
-                            </button>
-                            <input type="text" v-model="fightersSearch" placeholder="Поиск по позывному..." class="search-input">
-                        </div>
-                    </div>
-                    
-                    <div class="filters-row">
-                        <button @click="setFighterFilter(null)" :class="{active: fighterFilter === null}" class="filter-btn">
-                            Все
-                        </button>
-                        <button @click="setFighterFilter('активный')" :class="{active: fighterFilter === 'активный'}" class="filter-btn">
-                            Активные
-                        </button>
-                        <button @click="setFighterFilter('ранен')" :class="{active: fighterFilter === 'ранен'}" class="filter-btn">
-                            Раненые
-                        </button>
-                        <button @click="setFighterFilter('verified')" :class="{active: fighterFilter === 'verified'}" class="filter-btn">
-                            Проверенные
-                        </button>
-                    </div>
-                    
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Позывной</th>
-                                    <th>Подразделение</th>
-                                    <th>Регион</th>
-                                    <th>Статус</th>
-                                    <th>Приоритет</th>
-                                    <th>Проверен</th>
-                                    <th>Дата создания</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="fighter in filteredFighters" :key="fighter.id">
-                                    <td>{{ fighter.id }}</td>
-                                    <td>
-                                        <strong>{{ fighter.call_sign }}</strong>
-                                        <div v-if="fighter.story" class="text-muted" style="font-size: 0.8em;">
-                                            {{ fighter.story.substring(0, 50) }}...
-                                        </div>
-                                    </td>
-                                    <td>{{ fighter.unit || '—' }}</td>
-                                    <td>{{ fighter.region || '—' }}</td>
-                                    <td>
-                                        <span class="status-badge" :class="fighter.status">
-                                            {{ fighter.status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="priority-badge" :class="'priority-' + fighter.priority">
-                                            {{ fighter.priority }} ({{ getPriorityLabel(fighter.priority) }})
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <i v-if="fighter.is_verified" class="fas fa-check-circle text-success"></i>
-                                        <i v-else class="fas fa-times-circle text-danger"></i>
-                                    </td>
-                                    <td>{{ formatDate(fighter.created_at) }}</td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button @click="editFighter(fighter)" class="btn-icon" title="Редактировать">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button @click="deleteFighter(fighter.id)" class="btn-icon btn-danger" 
-                                                    title="Удалить" v-if="hasPermission(['admin'])">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
@@ -310,8 +211,6 @@
                                     <th>ID</th>
                                     <th>Жертвователь</th>
                                     <th>Сумма</th>
-                                    <th>Боец</th>
-                                    <th>Тип помощи</th>
                                     <th>Сообщение</th>
                                     <th>Статус</th>
                                     <th>Дата</th>
@@ -320,23 +219,23 @@
                             </thead>
                             <tbody>
                                 <tr v-for="donation in filteredDonations" :key="donation.id">
-                                    <td>{{ donation.id }}</td>
+                                    <td>${ donation.id }</td>
                                     <td>
-                                        {{ donation.is_anonymous ? 'Аноним' : donation.donor_name }}
+                                        ${ donation.is_anonymous ? 'Аноним' : donation.donor_name }
                                         <div v-if="donation.message" class="text-muted" style="font-size: 0.8em;">
-                                            {{ donation.message.substring(0, 30) }}...
+                                            ${ donation.message.substring(0, 30) }...
                                         </div>
                                     </td>
-                                    <td class="amount-cell">{{ formatCurrency(donation.amount) }}</td>
-                                    <td>{{ donation.fighter_call_sign || '—' }}</td>
-                                    <td>{{ donation.assistance_type || '—' }}</td>
-                                    <td>{{ donation.message ? donation.message.substring(0, 50) + '...' : '—' }}</td>
+                                    <td class="amount-cell">${ formatCurrency(donation.amount) }</td>
+                                    <td>${ donation.fighter_call_sign || '—' }</td>
+                                    <td>${ donation.assistance_type || '—' }</td>
+                                    <td>${ donation.message ? donation.message.substring(0, 50) + '...' : '—' }</td>
                                     <td>
                                         <span class="status-badge" :class="donation.status">
-                                            {{ donation.status }}
+                                            ${ donation.status }
                                         </span>
                                     </td>
-                                    <td>{{ formatDate(donation.created_at) }}</td>
+                                    <td>${ formatDate(donation.created_at) }</td>
                                     <td>
                                         <select v-model="donation.status" @change="updateDonationStatus(donation.id, donation.status)" 
                                                 class="status-select" :disabled="!hasPermission(['admin', 'moderator'])">
@@ -353,7 +252,7 @@
                             <button @click="prevDonationsPage" :disabled="donations.current_page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            <span>Страница {{ donations.current_page }} из {{ donations.pages }}</span>
+                            <span>Страница ${ donations.current_page } из ${ donations.pages }</span>
                             <button @click="nextDonationsPage" :disabled="donations.current_page === donations.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
@@ -387,21 +286,21 @@
                             </thead>
                             <tbody>
                                 <tr v-for="user in adminUsers" :key="user.id">
-                                    <td>{{ user.id }}</td>
-                                    <td>{{ user.username }}</td>
-                                    <td>{{ user.email }}</td>
-                                    <td>{{ user.full_name || '—' }}</td>
+                                    <td>${ user.id }</td>
+                                    <td>${ user.username }</td>
+                                    <td>${ user.email }</td>
+                                    <td>${ user.full_name || '—' }</td>
                                     <td>
                                         <span class="role-badge" :class="user.role">
-                                            {{ roleLabels[user.role] }}
+                                            ${ roleLabels[user.role] }
                                         </span>
                                     </td>
                                     <td>
                                         <span v-if="user.is_active" class="status-active">Активен</span>
                                         <span v-else class="status-inactive">Неактивен</span>
                                     </td>
-                                    <td>{{ formatDate(user.created_at) }}</td>
-                                    <td>{{ user.last_login ? formatDate(user.last_login) : '—' }}</td>
+                                    <td>${ formatDate(user.created_at) }</td>
+                                    <td>${ user.last_login ? formatDate(user.last_login) : '—' }</td>
                                     <td>
                                         <div class="action-buttons">
                                             <button @click="editUser(user)" class="btn-icon" title="Редактировать">
@@ -425,7 +324,7 @@
                 <!-- Уведомления -->
                 <div v-if="notification.show" :class="['notification', notification.type]">
                     <i :class="notification.icon"></i>
-                    <span>{{ notification.message }}</span>
+                    <span>${ notification.message }</span>
                     <button @click="notification.show = false" class="notification-close">&times;</button>
                 </div>
 
@@ -487,7 +386,7 @@
                                         <div class="secret-key">
                                             <label>Секретный ключ:</label>
                                             <div class="secret-display">
-                                                <code>{{ twoFactorData.secret || 'Загрузка...' }}</code>
+                                                <code>${ twoFactorData.secret || 'Загрузка...' }</code>
                                                 <button @click="copyToClipboard(twoFactorData.secret)" class="btn-icon">
                                                     <i class="fas fa-copy"></i>
                                                 </button>
@@ -495,7 +394,7 @@
                                         </div>
                                         
                                         <div class="account-info">
-                                            <p><strong>Аккаунт:</strong> {{ currentUser.email }}</p>
+                                            <p><strong>Аккаунт:</strong> ${ currentUser.email }</p>
                                             <p><strongТип:</strong> TOTP (Time-based)</p>
                                             <p><strong>Длина кода:</strong> 6 цифр</p>
                                             <p><strong>Период:</strong> 30 секунд</p>
@@ -552,7 +451,7 @@
                             <div v-if="twoFactorStep === 'verify'" class="two-factor-login">
                                 <div class="login-verify">
                                     <h4><i class="fas fa-user-shield"></i> Двухфакторная аутентификация</h4>
-                                    <p>Для входа в аккаунт <strong>{{ twoFactorData.username }}</strong> требуется подтверждение.</p>
+                                    <p>Для входа в аккаунт <strong>${ twoFactorData.username }</strong> требуется подтверждение.</p>
                                     
                                     <div class="verify-form">
                                         <div class="form-group">
@@ -645,7 +544,7 @@
                                 
                                 <div class="backup-codes-grid">
                                     <div v-for="(code, index) in twoFactorData.backup_codes" :key="index" class="backup-code">
-                                        <code>{{ code }}</code>
+                                        <code>${ code }</code>
                                     </div>
                                 </div>
                                 
@@ -679,6 +578,6 @@
 	};
 	</script>
 
-    <script src="admin.js"></script>
+    <script src="../static/js/admin.js"></script>
 </body>
 </html>
