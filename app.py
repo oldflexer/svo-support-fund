@@ -4,7 +4,8 @@ import qrcode
 import io
 import base64
 import pyotp
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta, UTC
 from functools import wraps
 
 from flask import Flask, render_template, request, jsonify, send_from_directory, session, url_for
@@ -71,6 +72,7 @@ def role_required(*roles):
         @jwt_required()
         def decorated_function(*args, **kwargs):
             current_user_id = get_jwt_identity()
+            # user = session.get(current_user_id)
             user = User.query.get(current_user_id)
             if not user or not user.is_active or user.role not in roles:
                 return jsonify({'error': 'Доступ запрещен'}), 403
@@ -215,7 +217,7 @@ def verify_2fa():
     user.last_login = datetime.utcnow()
     db.session.commit()
     
-    log_action(user.id, 'login_2fa', 'Успешный вход с 2FA', request.remote_addr)
+    log_action(get_jwt_identity(), 'login_2fa', 'Успешный вход с 2FA', request.remote_addr)
     
     return jsonify({
         'access_token': access_token,
@@ -234,19 +236,21 @@ def verify_2fa():
 def refresh():
     identity = get_jwt_identity()
     access_token = create_access_token(identity=identity)
+    log_action(get_jwt_identity(), 'refresh', 'Успешно обновлен токен', request.remote_addr)
     return jsonify({'access_token': access_token}), 200
 
 @app.route('/api/auth/logout', methods=['POST'])
 @jwt_required()
 def logout():
     # Optionally blacklist token (if using blacklist)
+    log_action(get_jwt_identity(), 'logout', 'Выход успешно выполнен', request.remote_addr)
     return jsonify({'message': 'Выход выполнен'}), 200
 
 @app.route('/api/auth/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'Пользователь не найден'}), 404
     return jsonify({
@@ -286,10 +290,11 @@ def setup_2fa():
     qr_dataurl = f"data:image/png;base64,{qr_base64}"
     
     # Generate backup codes (5 random 8-digit numbers)
-    import secrets
     backup_codes = [''.join(secrets.choice('0123456789') for _ in range(8)) for _ in range(5)]
     user.backup_codes = json.dumps(backup_codes)
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'setup_2fa', 'Установлена двухфакторная аутентификация', request.remote_addr)
     
     return jsonify({
         'qr_code': qr_dataurl,
@@ -317,7 +322,7 @@ def enable_2fa():
     user.two_factor_enabled = True
     db.session.commit()
     
-    log_action(user_id, '2fa_enable', 'Включена двухфакторная аутентификация', request.remote_addr)
+    log_action(get_jwt_identity(), '2fa_enable', 'Включена двухфакторная аутентификация', request.remote_addr)
     
     return jsonify({'message': '2FA успешно включена'}), 200
 
@@ -355,7 +360,7 @@ def disable_2fa():
     user.backup_codes = None
     db.session.commit()
     
-    log_action(user_id, '2fa_disable', 'Отключена двухфакторная аутентификация', request.remote_addr)
+    log_action(get_jwt_identity(), '2fa_disable', 'Отключена двухфакторная аутентификация', request.remote_addr)
     
     return jsonify({'message': '2FA отключена'}), 200
 
@@ -372,7 +377,7 @@ def regenerate_backup_codes():
     user.backup_codes = json.dumps(backup_codes)
     db.session.commit()
     
-    log_action(user_id, '2fa_regenerate_backup', 'Сгенерированы новые резервные коды', request.remote_addr)
+    log_action(get_jwt_identity(), '2fa_regenerate_backup', 'Сгенерированы новые резервные коды', request.remote_addr)
     
     return jsonify({'backup_codes': backup_codes}), 200
 
@@ -387,6 +392,7 @@ def dashboard():
     total_donations = Donation.query.count()
     total_amount = db.session.query(db.func.sum(Donation.amount)).scalar() or 0
     total_volunteers = Volunteer.query.count()
+    total_new_donations = Donation.query.filter_by(status='ожидает').count()
     
     # Recent donations
     recent = Donation.query.order_by(Donation.created_at.desc()).limit(10).all()
@@ -397,13 +403,24 @@ def dashboard():
         'status': d.status,
         'created_at': d.created_at.isoformat()
     } for d in recent]
+
+    # Change in last week
+    week_ago = datetime.now(UTC) - timedelta(days=7)
+    total_amount_week_ago = db.session.query(db.func.sum(Donation.amount)).filter(Donation.created_at < week_ago).scalar() or 0
+    first_donation = Donation.query.order_by(Donation.created_at.asc()).first().amount or 0
+    
+    if total_amount_week_ago:
+        change = (total_amount - total_amount_week_ago) / total_amount_week_ago
+    elif first_donation:
+        change = (total_amount - first_donation) / first_donation
+    else:
+        change = 0
     
     # For chart data (last 7 days)
-    from datetime import timedelta
     dates = []
     amounts = []
     for i in range(6, -1, -1):
-        day = datetime.utcnow().date() - timedelta(days=i)
+        day = datetime.now(UTC) - timedelta(days=i)
         dates.append(day.strftime('%d.%m'))
         day_start = datetime.combine(day, datetime.min.time())
         day_end = datetime.combine(day, datetime.max.time())
@@ -415,7 +432,9 @@ def dashboard():
     return jsonify({
         'donations': {
             'total': total_donations,
-            'total_amount': total_amount
+            'total_amount': total_amount,
+            'change': change,
+            'total_new_donations': total_new_donations
         },
         'volunteers': {
             'total': total_volunteers
@@ -436,12 +455,13 @@ def get_donations():
     page = request.args.get('page', 1, type=int)
     per_page = app.config['ITEMS_PER_PAGE']
     status = request.args.get('status')
-    
+        
     query = Donation.query
     if status:
         query = query.filter_by(status=status)
     
     pagination = query.order_by(Donation.created_at.desc()).paginate(page=page, per_page=per_page)
+    
     donations = [{
         'id': d.id,
         'donor_name': 'Аноним' if d.is_anonymous else d.donor_name,
@@ -451,7 +471,7 @@ def get_donations():
         'status': d.status,
         'created_at': d.created_at.isoformat()
     } for d in pagination.items]
-    
+
     return jsonify({
         'items': donations,
         'total': pagination.total,
@@ -486,11 +506,17 @@ def create_donation():
 @role_required('admin', 'moderator')
 def update_donation(id):
     donation = Donation.query.get_or_404(id)
-    data = request.get_json() or {}
+    data = request.get_json()
+    if data is None:
+        return jsonify({'error': 'Требуется JSON'}), 400
     if 'status' in data:
         donation.status = data['status']
-    db.session.commit()
-    return jsonify({'message': 'Статус обновлен'}), 200
+        db.session.commit()
+
+        log_action(get_jwt_identity(), 'update_donation', f'Пожертвование {donation.id} обновлено {data['status']}', request.remote_addr)
+
+        return jsonify({'message': 'Статус обновлен'}), 200
+    return jsonify({'error': 'Поле status не найдено'}), 400
 
 # -------------------------------
 # API: Volunteers
@@ -501,7 +527,13 @@ def update_donation(id):
 def get_volunteers():
     page = request.args.get('page', 1, type=int)
     per_page = app.config['ITEMS_PER_PAGE']
-    pagination = Volunteer.query.order_by(Volunteer.created_at.desc()).paginate(page=page, per_page=per_page)
+    status = request.args.get('status')
+        
+    query = Volunteer.query
+    if status:
+        query = query.filter_by(status=status)
+
+    pagination = query.order_by(Volunteer.created_at.desc()).paginate(page=page, per_page=per_page)
     volunteers = [{
         'id': v.id,
         'name': v.name,
@@ -513,6 +545,7 @@ def get_volunteers():
         'status': v.status,
         'created_at': v.created_at.isoformat()
     } for v in pagination.items]
+    
     return jsonify({
         'items': volunteers,
         'total': pagination.total,
@@ -522,10 +555,10 @@ def get_volunteers():
 
 @app.route('/api/volunteers', methods=['POST'])
 def create_volunteer():
-    data = request.get_json() or {}
+    data = request.get_json()
     form = VolunteerForm(data=data)
-    if not form.validate():
-        return jsonify({'errors': form.errors}), 400
+    # if not form.validate():
+    #     return jsonify({'errors': form.errors}), 400
     
     volunteer = Volunteer(
         name=form.name.data,
@@ -540,7 +573,7 @@ def create_volunteer():
     db.session.commit()
     
     # Update volunteer count stat
-    total = Volunteer.query.count()
+    total = db.session.query(Volunteer).count()
     update_setting('total_volunteers', str(total))
     
     return jsonify({'message': 'Заявка отправлена', 'id': volunteer.id}), 201
@@ -550,10 +583,16 @@ def create_volunteer():
 def update_volunteer(id):
     volunteer = Volunteer.query.get_or_404(id)
     data = request.get_json() or {}
+    if data is None:
+        return jsonify({'error': 'Требуется JSON'}), 400
     if 'status' in data:
         volunteer.status = data['status']
-    db.session.commit()
-    return jsonify({'message': 'Статус обновлен'}), 200
+        db.session.commit()
+
+        log_action(get_jwt_identity(), 'update_volunteer', f'Волонтёр {volunteer.id} обновлен {data['status']}', request.remote_addr)
+
+        return jsonify({'message': 'Статус обновлен'}), 200
+    return jsonify({'error': 'Поле status не найдено'}), 400
 
 # -------------------------------
 # API: Drives
@@ -601,6 +640,9 @@ def create_drive():
     )
     db.session.add(drive)
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'create_drive', f'Сбор {drive.id} создан', request.remote_addr)
+
     return jsonify({'message': 'Сбор создан', 'id': drive.id}), 201
 
 @app.route('/api/drives/<int:id>', methods=['PUT'])
@@ -613,6 +655,9 @@ def update_drive(id):
         if field in data:
             setattr(drive, field, data[field])
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'update_donation', f'Сбор {drive.id} обновлен {data}', request.remote_addr)
+
     return jsonify({'message': 'Сбор обновлен'}), 200
 
 @app.route('/api/drives/<int:id>', methods=['DELETE'])
@@ -621,6 +666,9 @@ def delete_drive(id):
     drive = Drive.query.get_or_404(id)
     db.session.delete(drive)
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'delete_drive', f'Сбор {drive.id} удален', request.remote_addr)
+
     return jsonify({'message': 'Сбор удален'}), 200
 
 # -------------------------------
@@ -692,6 +740,9 @@ def create_news():
     # Handle image upload separately
     db.session.add(article)
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'create_news', f'Новость {article.id} создана', request.remote_addr)
+
     return jsonify({'message': 'Новость создана', 'id': article.id}), 201
 
 @app.route('/api/news/<int:id>', methods=['PUT'])
@@ -704,6 +755,9 @@ def update_news(id):
         if field in data:
             setattr(article, field, data[field])
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'update_news', f'Новость {article.id} обновлена {data}', request.remote_addr)
+
     return jsonify({'message': 'Новость обновлена'}), 200
 
 @app.route('/api/news/<int:id>', methods=['DELETE'])
@@ -712,6 +766,9 @@ def delete_news(id):
     article = NewsArticle.query.get_or_404(id)
     db.session.delete(article)
     db.session.commit()
+
+    log_action(get_jwt_identity(), 'delete_news', f'Новость {id} удалена', request.remote_addr)
+
     return jsonify({'message': 'Новость удалена'}), 200
 
 # -------------------------------
@@ -758,6 +815,9 @@ def get_users():
         'last_login': u.last_login.isoformat() if u.last_login else None,
         'two_factor_enabled': u.two_factor_enabled
     } for u in users]
+
+    log_action(get_jwt_identity(), 'get_users', f'Пользователи загружены', request.remote_addr)
+
     return jsonify(result), 200
 
 @app.route('/api/admin/users', methods=['POST'])
@@ -785,35 +845,46 @@ def create_user():
     db.session.add(user)
     db.session.commit()
     
-    log_action(get_jwt_identity(), 'create_user', f'Создан пользователь {user.username}', request.remote_addr)
+    log_action(get_jwt_identity(), 'create_user', f'Создан пользователь {user.id}', request.remote_addr)
     
     return jsonify({'message': 'Пользователь создан', 'id': user.id}), 201
 
 @app.route('/api/admin/users/<int:id>', methods=['PUT'])
+@jwt_required()
 @role_required('admin')
 def update_user(id):
     user = User.query.get_or_404(id)
     data = request.get_json() or {}
+    
     # Update fields
     if 'username' in data and data['username'] != user.username:
         if User.query.filter_by(username=data['username']).first():
             return jsonify({'error': 'Логин уже занят'}), 400
         user.username = data['username']
-    if 'email' in data and data['email'] != user.email:
-        if User.query.filter_by(email=data['email']).first():
-            return jsonify({'error': 'Email уже занят'}), 400
+
+    # if 'email' in data and data['email'] != user.email:
+    #     if User.query.filter_by(email=data['email']).first():
+    #         return jsonify({'error': 'Email уже занят'}), 400
+    #     user.email = data['email']
+
+    if 'email' in data:
         user.email = data['email']
+
     if 'full_name' in data:
         user.full_name = data['full_name']
+
     if 'role' in data:
         user.role = data['role']
+
     if 'is_active' in data:
         user.is_active = data['is_active']
+
     if 'password' in data and data['password']:
         user.set_password(data['password'])
+
     db.session.commit()
     
-    log_action(get_jwt_identity(), 'update_user', f'Обновлен пользователь {user.username}', request.remote_addr)
+    log_action(get_jwt_identity(), 'update_user', f'Обновлен пользователь {user.id}', request.remote_addr)
     
     return jsonify({'message': 'Пользователь обновлен'}), 200
 
@@ -824,8 +895,34 @@ def toggle_user(id):
     user.is_active = not user.is_active
     db.session.commit()
     action = 'активирован' if user.is_active else 'деактивирован'
-    log_action(get_jwt_identity(), f'toggle_user_{action}', f'Пользователь {user.username} {action}', request.remote_addr)
+
+    log_action(get_jwt_identity(), f'toggle_user_{action}', f'Пользователь {user.id} {action}', request.remote_addr)
+    
     return jsonify({'message': f'Пользователь {action}', 'is_active': user.is_active}), 200
+
+@app.route('/api/admin/users/<int:id>', methods=['DELETE'])
+@jwt_required()
+@role_required('admin')  # только админ может удалять пользователей
+def delete_user(id):
+    """
+    Удаление пользователя по ID.
+    """
+    user = User.query.get(id)
+    if not user:
+        return jsonify({'error': 'Пользователь не найден'}), 404
+
+    # Нельзя удалить самого себя (опционально)
+    current_user_id = get_jwt_identity()
+    if user.id == current_user_id:
+        return jsonify({'error': 'Нельзя удалить самого себя'}), 400
+
+    db.session.delete(user)
+    db.session.commit()
+
+    # Логирование действия (если используется)
+    log_action(get_jwt_identity(), 'delete_user', f'Удалён пользователь {id}', request.remote_addr)
+
+    return jsonify({'message': 'Пользователь успешно удалён'}), 200
 
 # -------------------------------
 # API: Audit logs
@@ -845,6 +942,9 @@ def get_audit_logs():
         'ip_address': l.ip_address,
         'created_at': l.created_at.isoformat()
     } for l in pagination.items]
+
+    log_action(get_jwt_identity(), 'get_audit_logs', f'Логи загружены', request.remote_addr)
+
     return jsonify({
         'items': logs,
         'total': pagination.total,
@@ -872,6 +972,9 @@ def update_settings():
     data = request.get_json() or {}
     for key, value in data.items():
         update_setting(key, str(value))
+
+    log_action(get_jwt_identity(), 'update_settings', f'Настройки обновлены', request.remote_addr)
+
     return jsonify({'message': 'Настройки обновлены'}), 200
 
 # -------------------------------

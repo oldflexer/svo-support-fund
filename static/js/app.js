@@ -132,7 +132,14 @@ const app = createApp({
                 const response = await fetch('/api/volunteers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(volunteerForm)
+                    body: JSON.stringify({
+                        name: volunteerForm.name,
+                        email: volunteerForm.email,
+                        phone: volunteerForm.phone,
+                        city: volunteerForm.city,
+                        skills: volunteerForm.skills,
+                        can_deliver: volunteerForm.can_deliver
+                    })
                 });
                 if (response.ok) {
                     showNotification('Спасибо за желание помочь! Мы свяжемся с вами.', 'success');

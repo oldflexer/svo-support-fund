@@ -1,4 +1,4 @@
-const { createApp, ref, reactive, onMounted, computed } = Vue;
+const { createApp, ref, reactive, onMounted, computed, watch } = Vue;
 
 const app = createApp({
     delimiters: ['${', '}'],
@@ -19,6 +19,23 @@ const app = createApp({
             useBackup: false,
             password: ''
         });
+
+        // New user modal
+        const showUserModal = ref(false);
+        const userLoading = ref(false);
+        const userError = ref('');
+        const userForm = reactive({
+            username: '',
+            email: '',
+            full_name: '',
+            password: '',
+            role: 'moderator',
+            is_active: true
+        });
+        
+        // Edit user modal
+        const editUserModal = ref(false);
+        const editingUserId = ref(null);
         
         // UI state
         const activeTab = ref('dashboard');
@@ -32,18 +49,24 @@ const app = createApp({
         
         // Filters
         const donationStatusFilter = ref('');
-        
+        const volunteerStatusFilter = ref('');
+
         // Stats
-        const stats = ref({ donations: { total: 0, total_amount: 0 }, volunteers: { total: 0 } });
+        const stats = ref({ donations: { total: 0, total_amount: 0, change: 0, total_new_donations: 0 }, volunteers: { total: 0 }});
         
         // Chart ref
         const donationsChart = ref(null);
         let chartInstance = null;
 
         // Computed
-        const filteredDonations = computed(() => {
-            if (!donationStatusFilter.value) return donations.value.items;
-            return donations.value.items.filter(d => d.status === donationStatusFilter.value);
+        // const filteredDonations = computed(() => {
+        //     if (!donationStatusFilter.value) return donations.value.items;
+        //     return donations.value.items.filter(d => d.status === donationStatusFilter.value);
+        // });
+
+        const filteredVolunteers = computed(() => {
+            if (!volunteerStatusFilter.value) return volunteers.value.items;
+            return volunteers.value.items.filter(v => v.status === volunteerStatusFilter.value);
         });
 
         const roleLabels = {
@@ -52,6 +75,53 @@ const app = createApp({
         };
 
         // Methods
+        const apiFetch = async (url, options = {}) => {
+            // Добавляем текущий access token
+            let accessToken = localStorage.getItem('access_token');
+            if (accessToken) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${accessToken}`
+                };
+            }
+
+            let response = await fetch(url, options);
+
+            // Если ответ не 401, возвращаем его
+            if (response.status !== 401) {
+                return response;
+            }
+
+            // Пытаемся обновить токен
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (!refreshToken) {
+                logout();
+                throw new Error('Отсутствует refresh token');
+            }
+
+            try {
+                const refreshResponse = await fetch('/api/auth/refresh', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${refreshToken}` }
+                });
+
+                if (!refreshResponse.ok) {
+                    logout();
+                    throw new Error('Не удалось обновить токен');
+                }
+
+                const data = await refreshResponse.json();
+                localStorage.setItem('access_token', data.access_token);
+
+                // Повторяем исходный запрос с новым токеном
+                options.headers['Authorization'] = `Bearer ${data.access_token}`;
+                return await fetch(url, options);
+            } catch (e) {
+                logout();
+                throw e;
+            }
+        };
+
         const login = async () => {
             loading.value = true;
             loginError.value = '';
@@ -119,17 +189,18 @@ const app = createApp({
         };
 
         const logout = async () => {
-            await fetch('/api/auth/logout', { method: 'POST', headers: authHeaders() });
+            await apiFetch('/api/auth/logout', {method: 'POST'});
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
             isAuthenticated.value = false;
             currentUser.value = {};
+            showNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
         };
 
-        const authHeaders = () => {
-            const token = localStorage.getItem('access_token');
-            return token ? { 'Authorization': `Bearer ${token}` } : {};
-        };
+        // const authHeaders = () => {
+        //     const token = localStorage.getItem('access_token');
+        //     return token ? { 'Authorization': `Bearer ${token}` } : {};
+        // };
 
         const refreshToken = async () => {
             const refresh = localStorage.getItem('refresh_token');
@@ -150,7 +221,7 @@ const app = createApp({
 
         const loadDashboard = async () => {
             try {
-                const response = await fetch('/api/dashboard', { headers: authHeaders() });
+                const response = await apiFetch('/api/dashboard');
                 const data = await response.json();
                 stats.value = {
                     donations: data.donations,
@@ -185,8 +256,11 @@ const app = createApp({
 
         const loadDonations = async (page = 1) => {
             try {
-                const url = `/api/donations?page=${page}`;
-                const response = await fetch(url, { headers: authHeaders() });
+                let url = `/api/donations?page=${page}`;
+                if (donationStatusFilter.value) {
+                    url += `&status=${encodeURIComponent(donationStatusFilter.value)}`;
+                }
+                const response = await apiFetch(url);
                 const data = await response.json();
                 donations.value = data;
             } catch (e) {
@@ -194,10 +268,29 @@ const app = createApp({
             }
         };
 
+        const prevDonationsPage = () => {
+            if (donations.value.page > 1) {
+                loadDonations(donations.value.page - 1);
+            }
+        };
+
+        const nextDonationsPage = () => {
+            if (donations.value.page < donations.value.pages) {
+                loadDonations(donations.value.page + 1);
+            }
+        };
+
+        watch(donationStatusFilter, () => {
+            loadDonations(1);
+        });
+
         const loadVolunteers = async (page = 1) => {
             try {
                 const url = `/api/volunteers?page=${page}`;
-                const response = await fetch(url, { headers: authHeaders() });
+                if (volunteerStatusFilter.value) {
+                    url += `&status=${encodeURIComponent(volunteerStatusFilter.value)}`;
+                }
+                const response = await apiFetch(url);
                 const data = await response.json();
                 volunteers.value = data;
             } catch (e) {
@@ -205,9 +298,25 @@ const app = createApp({
             }
         };
 
+        const prevVolunteersPage = () => {
+            if (volunteers.value.page > 1) {
+                loadVolunteers(donations.value.page - 1);
+            }
+        };
+
+        const nextVolunteersPage = () => {
+            if (volunteers.value.page < volunteers.value.pages) {
+                loadVolunteers(volunteers.value.page + 1);
+            }
+        };
+
+        watch(volunteerStatusFilter, () => {
+            loadVolunteers(1);
+        });
+
         const loadAdminUsers = async () => {
             try {
-                const response = await fetch('/api/admin/users', { headers: authHeaders() });
+                const response = await apiFetch('/api/admin/users');
                 const data = await response.json();
                 adminUsers.value = data;
             } catch (e) {
@@ -217,32 +326,195 @@ const app = createApp({
 
         const updateDonationStatus = async (id, status) => {
             try {
-                await fetch(`/api/donations/${id}`, {
+                const response = await apiFetch(`/api/donations/${id}`, {
                     method: 'PUT',
-                    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status })
                 });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Ошибка при обновлении статуса');
+                }
+
+                loadDashboard()
+                loadDonations(donations.value.page)
+
                 showNotification('Статус обновлен');
+                
             } catch (e) {
                 showNotification('Ошибка', 'error');
             }
         };
 
+        const updateVolunteerStatus = async (id, status) => {
+            try {
+                const response = await apiFetch(`/api/volunteers/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Ошибка при обновлении статуса');
+                }
+
+                loadDashboard()
+                loadVolunteers()
+
+                showNotification('Статус обновлен');
+
+            } catch (e) {
+                showNotification('Ошибка', 'error');
+            }
+        };
+
+        const createUser = async () => {
+            userLoading.value = true;
+            userError.value = '';
+            try {
+                const response = await apiFetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userForm)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    userError.value = data.error || 'Ошибка при создании пользователя';
+                    return;
+                }
+                showNotification('Пользователь успешно создан', 'success');
+                showUserModal.value = false;
+                // Сброс формы
+                resetUserForm();
+                // Обновить список пользователей, если активна вкладка users
+                if (activeTab.value === 'users') {
+                    loadAdminUsers();
+                }
+            } catch (e) {
+                userError.value = 'Ошибка сети';
+            } finally {
+                userLoading.value = false;
+            }
+        };
+
+        const resetUserForm = () => {
+            userForm.username = '';
+            userForm.email = '';
+            userForm.full_name = '';
+            userForm.password = '';
+            userForm.role = 'moderator';
+            userForm.is_active = true;
+            userError.value = '';
+        };
+
+        const editUser = (user) => {
+            editUserModal.value = true;
+            editingUserId.value = user.id;
+            userError.value = '';
+            
+            userForm.username = user.username;
+            userForm.email = user.email;
+            userForm.full_name = user.full_name || '';
+            userForm.password = '';
+            userForm.role = user.role;
+            userForm.is_active = user.is_active;
+        };
+
+        const closeEditUserModal = () => {
+            editUserModal.value = false;
+            resetUserForm();
+        };
+
+        const saveUser = async () => {
+            userLoading.value = true;
+            userError.value = '';
+            try {
+                const response = await apiFetch(`/api/admin/users/${editingUserId.value}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(userForm)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    userError.value = data.error || 'Ошибка при сохранении пользователя';
+                    return;
+                }
+
+                showNotification('Пользователь обновлен', 'success');
+                editUserModal.value = false;
+
+                // deleteUser(editingUserId)
+                editingUserId.value = null;
+
+                resetUserForm();
+
+                if (activeTab.value === 'users') {
+                    loadAdminUsers();
+                }
+
+            } catch (e) {
+                userError.value = 'Ошибка сети';
+            } finally {
+                userLoading.value = false;
+            }
+        };
+
+        const confirmDeleteUser = () => {
+            if (confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+                deleteUser(editingUserId.value);
+            }
+        };
+
+        const deleteUser = async (userId) => {
+
+            userLoading.value = true;
+            userError.value = '';
+
+            try {
+                const response = await apiFetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (!response.ok) {
+                    userError.value = data.error || 'Ошибка при удалении пользователя';
+                    return;
+                }
+
+                showNotification('Пользователь удалён', 'success');
+
+                closeEditUserModal()
+                
+                if (activeTab.value === 'users') {
+                    loadAdminUsers();
+                }
+
+            } catch (e) {
+                userError.value = 'Ошибка сети';
+            } finally {
+                userLoading.value = false;
+            }
+        };
+
         const setActiveTab = (tab) => {
             activeTab.value = tab;
-            if (tab === 'donations') loadDonations();
+            if (tab === 'dashboard') loadDashboard();
+            if (tab === 'stats') loadStats();
+            if (tab === 'donations') loadDonations(1);
             if (tab === 'volunteers') loadVolunteers();
             if (tab === 'users') loadAdminUsers();
-            if (tab === 'dashboard') loadDashboard();
+            if (tab === 'audit') loadAudit();
+            if (tab === 'settings') loadSettings();
         };
 
         const getTabTitle = () => {
             const map = {
                 dashboard: 'Панель управления',
+                stats: 'Статистика',
                 donations: 'Пожертвования',
                 volunteers: 'Волонтёры',
                 users: 'Администраторы',
-                stats: 'Статистика',
                 audit: 'Логи действий',
                 settings: 'Настройки'
             };
@@ -252,9 +524,12 @@ const app = createApp({
         const getTabDescription = () => {
             const map = {
                 dashboard: 'Общая статистика и последние действия',
+                stats: 'Статистика',
                 donations: 'Управление входящими пожертвованиями',
                 volunteers: 'Заявки волонтёров',
-                users: 'Управление администраторами и модераторами'
+                users: 'Управление администраторами и модераторами',
+                audit: 'Логи действий',
+                settings: 'Настройки'
             };
             return map[activeTab.value] || '';
         };
@@ -264,11 +539,15 @@ const app = createApp({
             notification.type = type;
             notification.icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
             notification.show = true;
-            setTimeout(() => notification.show = false, 3000);
+            setTimeout(() => notification.show = false, 5000);
         };
 
         const formatCurrency = (value) => {
             return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(value);
+        };
+
+        const formatPercent = (value) => {
+            return new Intl.NumberFormat('ru-RU', { style: 'percent', minimumFractionDigits: 0 }).format(value);
         };
 
         const formatDate = (iso) => {
@@ -280,9 +559,8 @@ const app = createApp({
         // 2FA methods
         const setupTwoFactor = async () => {
             try {
-                const response = await fetch('/api/auth/2fa/setup', {
-                    method: 'POST',
-                    headers: authHeaders()
+                const response = await apiFetch('/api/auth/2fa/setup', {
+                    method: 'POST'
                 });
                 const data = await response.json();
                 twoFactorData.value = data;
@@ -295,9 +573,8 @@ const app = createApp({
 
         const enableTwoFactor = async () => {
             try {
-                const response = await fetch('/api/auth/2fa/enable', {
+                const response = await apiFetch('/api/auth/2fa/enable', {
                     method: 'POST',
-                    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: twoFactorForm.token })
                 });
                 if (response.ok) {
@@ -305,7 +582,7 @@ const app = createApp({
                     twoFactorModal.value = false;
                     twoFactorForm.token = '';
                     // Refresh user data
-                    const userResp = await fetch('/api/auth/me', { headers: authHeaders() });
+                    const userResp = await apiFetch('/api/auth/me');
                     currentUser.value = await userResp.json();
                 } else {
                     const err = await response.json();
@@ -318,9 +595,8 @@ const app = createApp({
 
         const disableTwoFactor = async () => {
             try {
-                const response = await fetch('/api/auth/2fa/disable', {
+                const response = await apiFetch('/api/auth/2fa/disable', {
                     method: 'POST',
-                    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         password: twoFactorForm.password,
                         token: twoFactorForm.token
@@ -342,9 +618,8 @@ const app = createApp({
 
         const regenerateBackupCodes = async () => {
             try {
-                const response = await fetch('/api/auth/2fa/backup-codes', {
-                    method: 'POST',
-                    headers: authHeaders()
+                const response = await apiFetch('/api/auth/2fa/backup-codes', {
+                    method: 'POST'
                 });
                 const data = await response.json();
                 twoFactorData.value.backup_codes = data.backup_codes;
@@ -373,12 +648,17 @@ const app = createApp({
             URL.revokeObjectURL(url);
         };
 
+        // Check permission
+        const hasPermission = (roles) => {
+            return roles.includes(currentUser.value.role);
+        };
+
         // Check existing token on mount
         onMounted(() => {
             const token = localStorage.getItem('access_token');
             if (token) {
                 // Validate token
-                fetch('/api/auth/me', { headers: authHeaders() })
+                apiFetch('/api/auth/me')
                     .then(res => res.ok ? res.json() : Promise.reject())
                     .then(user => {
                         currentUser.value = user;
@@ -393,6 +673,7 @@ const app = createApp({
         });
 
         return {
+            // States
             isAuthenticated,
             currentUser,
             loginForm,
@@ -402,6 +683,12 @@ const app = createApp({
             twoFactorStep,
             twoFactorData,
             twoFactorForm,
+            showUserModal,
+            userLoading,
+            userError,
+            userForm,
+            editUserModal,
+            editingUserId,
             activeTab,
             notification,
             donations,
@@ -410,20 +697,44 @@ const app = createApp({
             recentDonations,
             stats,
             donationStatusFilter,
-            filteredDonations,
+            volunteerStatusFilter,
             donationsChart,
+
+            // Computed
+            // filteredDonations,
+            filteredVolunteers,
+            
+            // Constants
             roleLabels,
+
+            // Methods
+            apiFetch,
             login,
             logout,
             refreshToken,
             verifyTwoFactor,
-            setActiveTab,
+            prevDonationsPage,
+            nextDonationsPage,
+            prevVolunteersPage,
+            nextVolunteersPage,
             updateDonationStatus,
+            updateVolunteerStatus,
+            createUser,
+            resetUserForm,
+            editUser,
+            closeEditUserModal,
+            saveUser,
+            confirmDeleteUser,
+            deleteUser,
+            setActiveTab,
             getTabTitle,
             getTabDescription,
             formatCurrency,
+            formatPercent,
             formatDate,
             showNotification,
+            hasPermission,
+
             // 2FA
             setupTwoFactor,
             enableTwoFactor,

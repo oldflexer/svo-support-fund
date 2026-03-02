@@ -295,16 +295,6 @@ body {
     color: #155724;
 }
 
-.status-wounded {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-treatment {
-    background: #cce5ff;
-    color: #004085;
-}
-
 .fighter-verified {
     color: var(--success);
     font-size: 0.8rem;
