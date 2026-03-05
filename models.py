@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
-class User(UserMixin, db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -48,19 +48,6 @@ class Donation(db.Model):
     # Optional link to a specific drive
     drive_id = db.Column(db.Integer, db.ForeignKey('drives.id'), nullable=True)
 
-class Volunteer(db.Model):
-    __tablename__ = 'volunteers'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(20))
-    city = db.Column(db.String(100))
-    skills = db.Column(db.Text)
-    can_deliver = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(20), default='новый')  # новый, связались, активен, архив
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 class Drive(db.Model):
     __tablename__ = 'drives'
     
@@ -68,7 +55,6 @@ class Drive(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     needs = db.Column(db.Text)  # JSON list
-    urgency = db.Column(db.String(20), default='средняя')  # высокая, средняя, низкая
     status = db.Column(db.String(20), default='активен')  # активен, завершен, приостановлен
     collected = db.Column(db.Integer, default=0)
     needed = db.Column(db.Integer, default=0)
@@ -99,8 +85,6 @@ class NewsArticle(db.Model):
     category = db.Column(db.String(50), default='новости')  # новости, отчёт, история
     main_image = db.Column(db.String(500))
     is_verified = db.Column(db.Boolean, default=False)
-    region = db.Column(db.String(100))
-    tags = db.Column(db.Text)  # JSON list
     views_count = db.Column(db.Integer, default=0)
     published_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -110,14 +94,19 @@ class NewsArticle(db.Model):
         # rough estimate: 200 words per minute
         word_count = len(self.content.split()) if self.content else 0
         return max(1, round(word_count / 200))
+
+class Volunteer(db.Model):
+    __tablename__ = 'volunteers'
     
-    @property
-    def tags_list(self):
-        import json
-        try:
-            return json.loads(self.tags)
-        except:
-            return []
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20))
+    city = db.Column(db.String(100))
+    skills = db.Column(db.Text)
+    can_deliver = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default='новый')  # новый, связались, активен, архив
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Setting(db.Model):
     __tablename__ = 'settings'
@@ -131,6 +120,7 @@ class AuditLog(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    username = db.Column(db.String(64))
     action = db.Column(db.String(200))
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(50))

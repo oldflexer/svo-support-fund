@@ -52,10 +52,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: 2rem;
 }
 
 .nav-brand {
+    max-width: 150px;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -72,7 +73,7 @@ body {
     font-weight: 900;
     font-size: 1.5rem;
     color: white;
-    width: 50%;
+    width: 25%;
     line-height: 1.25;
 }
 
@@ -293,86 +294,6 @@ body {
 .status-active {
     background: #d4edda;
     color: #155724;
-}
-
-.fighter-verified {
-    color: var(--success);
-    font-size: 0.8rem;
-}
-
-.fighter-photo {
-    height: 200px;
-    background-size: cover;
-    background-position: center;
-    position: relative;
-}
-
-.fighter-callsign {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(26, 54, 93, 0.8);
-    color: white;
-    padding: 1rem;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.fighter-info {
-    padding: 1.5rem;
-}
-
-.fighter-info h3 {
-    font-family: 'Montserrat', sans-serif;
-    margin-bottom: 0.5rem;
-}
-
-.fighter-info p {
-    color: var(--gray);
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.fighter-needs {
-    margin: 1rem 0;
-    padding: 1rem;
-    background: var(--light-gray);
-    border-radius: var(--border-radius);
-}
-
-.fighter-needs h4 {
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.fighter-needs ul {
-    list-style: none;
-    padding-left: 1rem;
-}
-
-.fighter-needs li {
-    margin-bottom: 0.25rem;
-    position: relative;
-    padding-left: 1rem;
-}
-
-.fighter-needs li:before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: var(--secondary);
-}
-
-.fighter-actions {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
 }
 
 .btn-small {
@@ -653,30 +574,16 @@ body {
 
 .drive-header {
     padding: 0.75rem 1rem;
-    color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.drive-header.urgency-critical {
-    background: linear-gradient(135deg, #e53e3e, #c53030);
-}
-
-.drive-header.urgency-high {
-    background: linear-gradient(135deg, #ed8936, #dd6b20);
-}
-
-.drive-header.urgency-normal {
-    background: linear-gradient(135deg, #38a169, #2f855a);
-}
-
-.drive-urgency {
+.drive-header h3 {
+    padding: 0.75rem 1rem;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    font-size: 0.9rem;
 }
 
 .drive-status {

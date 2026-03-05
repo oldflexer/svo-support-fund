@@ -53,11 +53,11 @@
                     </p>
                     <div class="hero-stats animate__animated animate__fadeInUp animate__delay-2s">
                         <div class="stat-item">
-                            <div class="stat-number">${ formatCurrency(stats.total_donated) || '0 ₽' }</div>
+                            <div class="stat-number">${ formatCurrency(stats.sum_donation) || '0 ₽' }</div>
                             <div class="stat-label">Собрано средств</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">${ stats.total_volunteers || '0' }</div>
+                            <div class="stat-number">${ stats.count_volunteers || '0' }</div>
                             <div class="stat-label">Волонтёров</div>
                         </div>
                     </div>
@@ -78,21 +78,33 @@
             <!-- Текущие сборы -->
             <section id="current-drives" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-hand-holding-heart"></i> Текущие сборы
+                    <i class="fas fa-flag"></i> Текущие сборы
                 </h2>
+
+                <div class="drives-filters">
+                    <button @click="setDrivesFilter('')" :class="{active: drivesFilter === ''}" class="filter-btn">
+                        Все
+                    </button>
+                    <button @click="setDrivesFilter('активен')" :class="{active: drivesFilter === 'активен'}" class="filter-btn">
+                        Активные
+                    </button>
+                    <button @click="setDrivesFilter('завершен')" :class="{active: drivesFilter === 'завершен'}" class="filter-btn">
+                        Завершённые
+                    </button>
+                    <button @click="setDrivesFilter('приостановлен')" :class="{active: drivesFilter === 'приостановлен'}" class="filter-btn">
+                        Приостановленные
+                    </button>
+                </div>
                 
                 <div class="current-drives">
                     <div v-for="drive in filteredDrives" :key="drive.id" class="drive-card">
-                        <div class="drive-header" :class="drive.urgency_class">
-                            <div class="drive-urgency">
-                                <i :class="getUrgencyIcon(drive.urgency)"></i> ${ getUrgencyText(drive.urgency) }
-                            </div>
-                            <div class="drive-status">
-                                ${ drive.status }
-                            </div>
+                        <div class="drive-header">
+                            <h3>
+                                ${ drive.title }
+                            </h3>
                         </div>
-                        
                         <div class="drive-content">
+                            ${ drive.description }
                             <div class="drive-needs">
                                 <h4><i class="fas fa-tools"></i> Необходимо:</h4>
                                 <ul>
@@ -108,21 +120,21 @@
                             <div class="drive-progress">
                                 <div class="progress-info">
                                     <div class="progress-amounts">
-                                        <span class="collected">${ formatCurrency(drive.progress.collected) }</span>
-                                        <span class="needed">из ${ formatCurrency(drive.progress.needed) }</span>
+                                        <span class="collected">${ formatCurrency(drive.collected) }</span>
+                                        <span class="needed">из ${ formatCurrency(drive.needed) }</span>
                                     </div>
                                     <div class="progress-percentage">
-                                        ${ drive.progress.percentage }%
+                                        ${ drive.progress }%
                                     </div>
                                 </div>
                                 <div class="progress-bar">
-                                    <div class="progress-fill" :style="{width: drive.progress.percentage + '%'}"></div>
+                                    <div class="progress-fill" :style="{width: drive.progress + '%'}"></div>
                                 </div>
                             </div>
                             
                             <div class="drive-actions">
                                 <button @click="showDonationForDrive(drive.id)" class="btn-small btn-primary">
-                                    <i href="#donate" @click.prevent="scrollTo('donate')" class="fas fa-donate"></i> Поддержать сбор
+                                    <i href="#donate" @click.prevent="scrollTo('donate')" class="fas fa-hand-holding-heart"></i> Поддержать сбор
                                 </button>
                                 <button @click="viewDriveDetails(drive.id)" class="btn-small">
                                     <i class="fas fa-info-circle"></i> Подробнее
@@ -134,14 +146,16 @@
                 
                 <div v-if="filteredDrives.length === 0" class="no-drives">
                     <i class="fas fa-inbox"></i>
-                    <h3>Нет активных сборов</h3>
+                    <h3 v-if="drivesFilter === ''">Нет активных сборов</h3>
+                    <h3 v-if="drivesFilter === 'активен'">Нет активных сборов</h3>
+                    <h3 v-if="drivesFilter === 'завершен'">Нет завершенных сборов</h3>
+                    <h3 v-if="drivesFilter === 'приостановлен'">Нет приостановленных сборов</h3>
                 </div>
-
-                <button @click.prevent="scrollTo('donate')" class="btn-donate">
+                
+                <button v-if="filteredDrives.length === 0" @click.prevent="scrollTo('donate')" class="btn-donate">
                     <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
                 </button>
             </section>
-            
 
             <!-- Новости -->
             <section id="news" class="section">
@@ -150,7 +164,7 @@
                 </h2>
                 
                 <div class="news-filters">
-                    <button @click="setNewsFilter(null)" :class="{active: newsFilter === null}" class="filter-btn">
+                    <button @click="setNewsFilter('')" :class="{active: newsFilter === ''}" class="filter-btn">
                         Все
                     </button>
                     <button @click="setNewsFilter('новости')" :class="{active: newsFilter === 'новости'}" class="filter-btn">
@@ -217,7 +231,15 @@
                     </div>
                 </div>
 
-                <button @click.prevent="scrollTo('donate')" class="btn-donate">
+                <div v-if="filteredNews.length === 0" class="no-news">
+                    <i class="fas fa-inbox"></i>
+                    <h3 v-if="newsFilter === ''">Пока нет новостей</h3>
+                    <h3 v-if="newsFilter === 'новости'">Пока нет новостей</h3>
+                    <h3 v-if="newsFilter === 'отчёт'">Пока нет отчётов</h3>
+                    <h3 v-if="newsFilter === 'история'">Пока нет историй</h3>
+                </div>
+
+                <button v-if="filteredNews.length === 0" @click.prevent="scrollTo('donate')" class="btn-donate">
                     <i class="fas fa-hand-holding-heart"></i> Сделать пожертвование
                 </button>
             </section>
@@ -421,7 +443,7 @@
                     <div class="donation-form-card">
                         <h3>Форма пожертвования</h3>
                         <form @submit.prevent="submitDonation" class="donation-form">
-                            <div class="form-group">
+                            <div v-if="!donationForm.is_anonymous" class="form-group">
                                 <label><i class="fas fa-user"></i> Ваше имя</label>
                                 <input type="text" v-model="donationForm.name" placeholder="Как к вам обращаться?" required>
                             </div>
@@ -545,6 +567,6 @@
             <button @click="notification.show = false" class="notification-close">&times;</button>
         </div>
     </div>
-    <script src="../static/js/app.js"></script>
+    <script src="../static/js/index.js"></script>
 </body>
 </html>

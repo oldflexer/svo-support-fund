@@ -20,6 +20,23 @@ const app = createApp({
             password: ''
         });
 
+        // Sidebar
+        const sidebarData = ref(null);
+        const sidebarLoading = ref(false);
+        const sidebarError = ref('');
+
+        // Dashboard
+        const dashboardData = ref({
+            donations: { total: 0, total_amount: 0, change: 0, recent_donations: 0 },
+            volunteers: { total: 0 },
+            chart: { labels: [], datasets: [{ label: '', data: []}] }
+        });
+
+        // Stats
+        const statsData = ref(null);
+        const statsLoading = ref(false);
+        const statsError = ref('');
+
         // New user modal
         const showUserModal = ref(false);
         const userLoading = ref(false);
@@ -37,38 +54,53 @@ const app = createApp({
         const editUserModal = ref(false);
         const editingUserId = ref(null);
         
+        // Drives
+        const showDriveModal = ref(false);
+        const driveModalMode = ref('add'); // 'add' или 'edit'
+        const editingDriveId = ref(null);
+        const driveForm = reactive({
+            title: '',
+            description: '',
+            needs: [],
+            status: 'активен', // активен, завершен, приостановлен
+            collected: 0,
+            needed: 0
+        });
+        const driveLoading = ref(false);
+        const driveError = ref('');
+
+        const needsText = ref('');
+        
         // UI state
         const activeTab = ref('dashboard');
         const notification = reactive({ show: false, type: 'success', icon: '', message: '' });
         
         // Data tables
         const donations = ref({ items: [], total: 0, page: 1, pages: 1 });
-        const volunteers = ref({ items: [], total: 0, page: 1, pages: 1 });
-        const adminUsers = ref([]);
         const recentDonations = ref([]);
+        const drives = ref({ items: [], total: 0, page: 1, pages: 1});
+        const news = ref({ items: [], total: 0, page: 1, pages: 1});
+        const volunteers = ref({ items: [], total: 0, page: 1, pages: 1 });
+        const adminUsers = ref({ items: [], total: 0, page: 1, pages: 1 });
+        const auditLogs = ref({ items: [], total: 0, page: 1, pages: 1 });
         
         // Filters
         const donationStatusFilter = ref('');
+        const driveStatusFilter = ref('');
         const volunteerStatusFilter = ref('');
-
-        // Stats
-        const stats = ref({ donations: { total: 0, total_amount: 0, change: 0, total_new_donations: 0 }, volunteers: { total: 0 }});
+        const auditFilters = reactive({user_id: null});
         
         // Chart ref
         const donationsChart = ref(null);
         let chartInstance = null;
 
         // Computed
-        // const filteredDonations = computed(() => {
-        //     if (!donationStatusFilter.value) return donations.value.items;
-        //     return donations.value.items.filter(d => d.status === donationStatusFilter.value);
-        // });
-
         const filteredVolunteers = computed(() => {
             if (!volunteerStatusFilter.value) return volunteers.value.items;
             return volunteers.value.items.filter(v => v.status === volunteerStatusFilter.value);
         });
 
+        // Constants
         const roleLabels = {
             admin: 'Администратор',
             moderator: 'Модератор'
@@ -131,7 +163,9 @@ const app = createApp({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(loginForm)
                 });
+
                 const data = await response.json();
+
                 if (!response.ok) {
                     loginError.value = data.error || 'Ошибка входа';
                     return;
@@ -142,13 +176,13 @@ const app = createApp({
                     twoFactorModal.value = true;
                     return;
                 }
-                // Store tokens
+                
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('refresh_token', data.refresh_token);
                 currentUser.value = data.user;
                 isAuthenticated.value = true;
-                // Load initial data
-                loadDashboard();
+                setActiveTab('dashboard');
+
             } catch (e) {
                 loginError.value = 'Ошибка сети';
             } finally {
@@ -180,7 +214,7 @@ const app = createApp({
                 twoFactorModal.value = false;
                 twoFactorForm.token = '';
                 twoFactorForm.useBackup = false;
-                loadDashboard();
+
             } catch (e) {
                 showNotification('Ошибка сети', 'error');
             } finally {
@@ -196,11 +230,6 @@ const app = createApp({
             currentUser.value = {};
             showNotification('Сессия истекла. Пожалуйста, войдите снова.', 'warning');
         };
-
-        // const authHeaders = () => {
-        //     const token = localStorage.getItem('access_token');
-        //     return token ? { 'Authorization': `Bearer ${token}` } : {};
-        // };
 
         const refreshToken = async () => {
             const refresh = localStorage.getItem('refresh_token');
@@ -219,27 +248,55 @@ const app = createApp({
             }
         };
 
+        const loadSidebar = async () => {
+            sidebarLoading.value = true;
+            sidebarError.value = '';
+            try {
+                const response = await apiFetch('/api/admin/sidebar');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка загрузки боковой панели');
+                }
+                sidebarData.value = await response.json();
+            } catch (e) {
+                sidebarError.value = e.message;
+                console.error('Sidebar load failed', e);
+            } finally {
+                sidebarLoading.value = false;
+            }
+        };
+        // Diman imposter
+
         const loadDashboard = async () => {
             try {
-                const response = await apiFetch('/api/dashboard');
+                const response = await apiFetch('/api/admin/dashboard');
                 const data = await response.json();
-                stats.value = {
-                    donations: data.donations,
-                    volunteers: data.volunteers
+                dashboardData.value = {
+                    donations: { 
+                        total: data.donations.total, 
+                        total_amount: data.donations.total_amount, 
+                        change: data.donations.change, 
+                        recent_donations: data.donations.recent_donations },
+                    volunteers: { 
+                        total: data.volunteers.total },
+                    chart: { 
+                        labels: data.chart.labels, 
+                        datasets: [{ label: data.chart.datasets[0].label, data: data.chart.datasets[0].data}] }
                 };
-                recentDonations.value = data.recent_donations;
+
                 // Update chart
                 if (donationsChart.value) {
                     if (chartInstance) chartInstance.destroy();
                     const ctx = donationsChart.value.getContext('2d');
                     chartInstance = new Chart(ctx, {
-                        type: 'line',
+                        type: 'bar',
                         data: {
-                            labels: data.chart.labels,
+                            labels: dashboardData.value.chart.labels,
                             datasets: [{
-                                label: 'Сумма пожертвований',
-                                data: data.chart.datasets[0].data,
+                                label: dashboardData.value.chart.datasets[0].label,
+                                data: dashboardData.value.chart.datasets[0].data,
                                 borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgb(59, 130, 246)',
                                 tension: 0.1
                             }]
                         },
@@ -249,20 +306,40 @@ const app = createApp({
                         }
                     });
                 }
+
             } catch (e) {
                 console.error('Dashboard load failed', e);
             }
         };
 
+        const loadStats = async () => {
+            statsLoading.value = true;
+            statsError.value = '';
+            try {
+                const response = await apiFetch('/api/admin/stats');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка загрузки статистики');
+                }
+                statsData.value = await response.json();
+            } catch (e) {
+                statsError.value = e.message;
+                console.error('Stats load failed', e);
+            } finally {
+                statsLoading.value = false;
+            }
+        };
+
         const loadDonations = async (page = 1) => {
             try {
-                let url = `/api/donations?page=${page}`;
+                let url = `/api/admin/donations?page=${page}`;
                 if (donationStatusFilter.value) {
                     url += `&status=${encodeURIComponent(donationStatusFilter.value)}`;
                 }
                 const response = await apiFetch(url);
                 const data = await response.json();
                 donations.value = data;
+                
             } catch (e) {
                 console.error(e);
             }
@@ -284,9 +361,155 @@ const app = createApp({
             loadDonations(1);
         });
 
+        const updateDonationStatus = async (id, status) => {
+            try {
+                const response = await apiFetch(`/api/admin/donations/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Ошибка при обновлении статуса');
+                }
+
+                loadDashboard()
+
+                showNotification('Статус обновлен');
+                
+            } catch (e) {
+                showNotification('Ошибка1', 'error');
+            }
+        };
+
+        const loadDrives = async (page = 1) => {
+            try {
+                let url = `/api/admin/drives?page=${page}`;
+                if (driveStatusFilter.value) {
+                    url += `&status=${encodeURIComponent(driveStatusFilter.value)}`;
+                }
+                const response = await apiFetch(url);
+                const data = await response.json();
+                drives.value = data;
+            } catch (e) {
+                console.error('Ошибка загрузки сборов:', e);
+            }
+        };
+
+        const resetDriveForm = () => {
+            driveForm.title = '';
+            driveForm.description = '';
+            driveForm.needs = [];
+            driveForm.status = 'активен';
+            driveForm.collected = 0;
+            driveForm.needed = 0;
+            driveError.value = '';
+        };
+
+        const openAddDriveModal = () => {
+            driveModalMode.value = 'add';
+            editingDriveId.value = null;
+            resetDriveForm();
+            showDriveModal.value = true;
+        };
+
+        const editDrive = (drive) => {
+            driveModalMode.value = 'edit';
+            editingDriveId.value = drive.id;
+            driveForm.title = drive.title;
+            driveForm.description = drive.description || '';
+            driveForm.needs = drive.needs || [];
+            driveForm.status = drive.status;
+            driveForm.collected = drive.collected;
+            driveForm.needed = drive.needed;
+            showDriveModal.value = true;
+        };
+
+        const saveDrive = async () => {
+            driveLoading.value = true;
+            driveError.value = '';
+            try {
+                let url = '/api/admin/drives';
+                let method = 'POST';
+                if (driveModalMode.value === 'edit') {
+                    url = `/api/admin/drives/${editingDriveId.value}`;
+                    method = 'PUT';
+                }
+                const response = await apiFetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(driveForm)
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка сохранения');
+                }
+                showNotification(
+                    driveModalMode.value === 'add' ? 'Сбор создан' : 'Сбор обновлён',
+                    'success'
+                );
+                showDriveModal.value = false;
+                resetDriveForm();
+                loadDrives(drives.value.page);
+            } catch (e) {
+                driveError.value = e.message;
+            } finally {
+                driveLoading.value = false;
+            }
+        };
+
+        const confirmDeleteDrive = (driveId) => {
+            if (confirm('Вы уверены, что хотите удалить этот сбор?')) {
+                deleteDrive(driveId);
+            }
+        };
+
+        const deleteDrive = async (driveId) => {
+            try {
+                const response = await apiFetch(`/api/admin/drives/${driveId}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка удаления');
+                }
+                showNotification('Сбор удалён', 'success');
+                loadDrives(drives.value.page);
+            } catch (e) {
+                showNotification(e.message, 'error');
+            }
+        };
+
+        const prevDrivesPage = () => {
+            if (drives.value.page > 1) {
+                loadDrives(drives.value.page - 1);
+            }
+        };
+
+        const nextDrivesPage = () => {
+            if (drives.value.page < drives.value.pages) {
+                loadDrives(drives.value.page + 1);
+            }
+        };
+
+        watch(driveStatusFilter, () => {
+            loadDrives(1);
+        });
+
+        watch(() => driveForm.needs, (newNeeds) => {
+            if (Array.isArray(newNeeds)) {
+                needsText.value = newNeeds.join('\n');
+            }
+        }, { immediate: true });
+
+        const updateNeedsFromText = () => {
+            driveForm.needs = needsText.value.split('\n').filter(line => line.trim() !== '');
+        };
+
         const loadVolunteers = async (page = 1) => {
             try {
-                const url = `/api/volunteers?page=${page}`;
+                let url = `/api/admin/volunteers?page=${page}`;
                 if (volunteerStatusFilter.value) {
                     url += `&status=${encodeURIComponent(volunteerStatusFilter.value)}`;
                 }
@@ -314,59 +537,48 @@ const app = createApp({
             loadVolunteers(1);
         });
 
-        const loadAdminUsers = async () => {
+        const updateVolunteerStatus = async (id, status) => {
             try {
-                const response = await apiFetch('/api/admin/users');
+                const response = await apiFetch(`/api/admin/volunteers/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Ошибка при обновлении статуса');
+                }
+
+                loadDashboard()
+
+                showNotification('Статус обновлен');
+
+            } catch (e) {
+                showNotification('Ошибка', 'error');
+            }
+        };
+
+        const loadAdminUsers = async (page = 1) => {
+            try {
+                const url = `/api/admin/users?page=${page}`;
+                const response = await apiFetch(url);
                 const data = await response.json();
                 adminUsers.value = data;
             } catch (e) {
-                console.error(e);
+                console.error('Ошибка загрузки пользователей:', e);
             }
         };
 
-        const updateDonationStatus = async (id, status) => {
-            try {
-                const response = await apiFetch(`/api/donations/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Ошибка при обновлении статуса');
-                }
-
-                loadDashboard()
-                loadDonations(donations.value.page)
-
-                showNotification('Статус обновлен');
-                
-            } catch (e) {
-                showNotification('Ошибка', 'error');
+        const prevUsersPage = () => {
+            if (adminUsers.value.page > 1) {
+                loadAdminUsers(adminUsers.value.page - 1);
             }
         };
 
-        const updateVolunteerStatus = async (id, status) => {
-            try {
-                const response = await apiFetch(`/api/volunteers/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Ошибка при обновлении статуса');
-                }
-
-                loadDashboard()
-                loadVolunteers()
-
-                showNotification('Статус обновлен');
-
-            } catch (e) {
-                showNotification('Ошибка', 'error');
+        const nextUsersPage = () => {
+            if (adminUsers.value.page < adminUsers.value.pages) {
+                loadAdminUsers(adminUsers.value.page + 1);
             }
         };
 
@@ -450,7 +662,7 @@ const app = createApp({
                 resetUserForm();
 
                 if (activeTab.value === 'users') {
-                    loadAdminUsers();
+                    loadAdminUsers(adminUsers.value.page);
                 }
 
             } catch (e) {
@@ -484,10 +696,18 @@ const app = createApp({
 
                 showNotification('Пользователь удалён', 'success');
 
-                closeEditUserModal()
-                
                 if (activeTab.value === 'users') {
-                    loadAdminUsers();
+                    loadAdminUsers(adminUsers.value.page);
+                }
+                
+                closeEditUserModal()
+
+                if (activeTab.value === 'users') {
+                    if (adminUsers.items.length === 0 && adminUsers.value.page > 1) {
+                        loadAdminUsers(adminUsers.value.page - 1);
+                    } else {
+                        loadAdminUsers(adminUsers.value.page);
+                    }
                 }
 
             } catch (e) {
@@ -497,14 +717,71 @@ const app = createApp({
             }
         };
 
+        const toggleUserStatus = async (user) => {
+            const action = user.is_active ? 'деактивировать' : 'активировать';
+
+            try {
+                const response = await apiFetch(`/api/admin/users/${user.id}/toggle`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `Не удалось ${action} пользователя ${user.id}`);
+                }
+
+                const result = await response.json();
+                showNotification(result.message || `Удалось успешно ${action} пользователя ${user.id}`, 'success');
+
+                if (activeTab.value === 'users') {
+                    loadAdminUsers(adminUsers.value.page);
+                }
+
+            } catch (e) {
+                showNotification(e.message, 'error');
+            }
+        };
+
+        const loadAudit = async (page = 1) => {
+            try {
+                let url = `/api/admin/audit?page=${page}`;
+                if (auditFilters.user_id) {
+                    url += `&user_id=${auditFilters.user_id}`;
+                }
+                const response = await apiFetch(url);
+                const data = await response.json();
+                auditLogs.value = data;
+            } catch (e) {
+                console.error('Ошибка загрузки логов:', e);
+            }
+        };
+
+        const prevAuditPage = () => {
+            if (auditLogs.value.page > 1) {
+                loadAudit(auditLogs.value.page - 1);
+            }
+        };
+
+        const nextAuditPage = () => {
+            if (auditLogs.value.page < auditLogs.value.pages) {
+                loadAudit(auditLogs.value.page + 1);
+            }
+        };
+
+        watch(() => auditFilters.user_id, () => {
+            loadAudit(1);
+        });
+
         const setActiveTab = (tab) => {
+            loadSidebar();
             activeTab.value = tab;
             if (tab === 'dashboard') loadDashboard();
             if (tab === 'stats') loadStats();
             if (tab === 'donations') loadDonations(1);
+            if (tab === 'drives') loadDrives(1);
             if (tab === 'volunteers') loadVolunteers();
-            if (tab === 'users') loadAdminUsers();
-            if (tab === 'audit') loadAudit();
+            if (tab === 'users') loadAdminUsers(1);
+            if (tab === 'audit') loadAudit(1);
             if (tab === 'settings') loadSettings();
         };
 
@@ -513,6 +790,7 @@ const app = createApp({
                 dashboard: 'Панель управления',
                 stats: 'Статистика',
                 donations: 'Пожертвования',
+                drives: 'Сборы',
                 volunteers: 'Волонтёры',
                 users: 'Администраторы',
                 audit: 'Логи действий',
@@ -524,11 +802,12 @@ const app = createApp({
         const getTabDescription = () => {
             const map = {
                 dashboard: 'Общая статистика и последние действия',
-                stats: 'Статистика',
+                stats: 'Подробная статистика',
                 donations: 'Управление входящими пожертвованиями',
+                drives: 'Управление сборами',
                 volunteers: 'Заявки волонтёров',
                 users: 'Управление администраторами и модераторами',
-                audit: 'Логи действий',
+                audit: 'Аудит последних действий администраторов',
                 settings: 'Настройки'
             };
             return map[activeTab.value] || '';
@@ -664,12 +943,16 @@ const app = createApp({
                         currentUser.value = user;
                         isAuthenticated.value = true;
                         loadDashboard();
+                        loadAdminUsers();
+                        loadAudit();
                     })
                     .catch(() => {
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('refresh_token');
                     });
             }
+
+            loadSidebar()
         });
 
         return {
@@ -679,29 +962,55 @@ const app = createApp({
             loginForm,
             loginError,
             loading,
+
             twoFactorModal,
             twoFactorStep,
             twoFactorData,
             twoFactorForm,
+            
+            sidebarData,
+
+            dashboardData,
+
+            statsData,
+            statsLoading,
+            statsError,
+
             showUserModal,
             userLoading,
             userError,
             userForm,
+
             editUserModal,
             editingUserId,
+
+            showDriveModal,
+            driveModalMode,
+            editingDriveId,
+            driveForm,
+            driveLoading,
+            driveError,
+            needsText,
+
             activeTab,
             notification,
+
             donations,
+            recentDonations,
+            drives,
+            news,
             volunteers,
             adminUsers,
-            recentDonations,
-            stats,
+            auditLogs,
+
             donationStatusFilter,
+            driveStatusFilter,
             volunteerStatusFilter,
+            auditFilters,
+
             donationsChart,
 
             // Computed
-            // filteredDonations,
             filteredVolunteers,
             
             // Constants
@@ -709,16 +1018,31 @@ const app = createApp({
 
             // Methods
             apiFetch,
+
             login,
             logout,
+
             refreshToken,
             verifyTwoFactor,
             prevDonationsPage,
             nextDonationsPage,
+
+            resetDriveForm,
+            openAddDriveModal,
+            editDrive,
+            saveDrive,
+            confirmDeleteDrive,
+            deleteDrive,
+            prevDrivesPage,
+            nextDrivesPage,
+            updateNeedsFromText,
+
             prevVolunteersPage,
             nextVolunteersPage,
             updateDonationStatus,
             updateVolunteerStatus,
+            prevUsersPage,
+            nextUsersPage,
             createUser,
             resetUserForm,
             editUser,
@@ -726,6 +1050,9 @@ const app = createApp({
             saveUser,
             confirmDeleteUser,
             deleteUser,
+            toggleUserStatus,
+            prevAuditPage,
+            nextAuditPage,
             setActiveTab,
             getTabTitle,
             getTabDescription,

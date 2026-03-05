@@ -3,24 +3,20 @@ const { createApp, ref, reactive, onMounted, computed } = Vue;
 const app = createApp({
     delimiters: ['${', '}'],
     setup() {
-        // State
+        // Stats
         const stats = ref({
-            total_donated: 0,
-            total_volunteers: 0
+            sum_donation: 0,
+            count_volunteers: 0
         });
-        const drives = ref([]);
-        const news = ref([]);
+
+        // Drives
+        const drives = ref({ items: [] });
+        const drivesFilter = ref('');
+
+        // News
+        const news = ref({ items: [] });
         const featuredArticle = ref(null);
-        const newsFilter = ref(null);
-        
-        // Donation form
-        const donationForm = reactive({
-            name: '',
-            amount: 1000,
-            message: '',
-            is_anonymous: false
-        });
-        const donationLoading = ref(false);
+        const newsFilter = ref('');
         
         // Volunteer form
         const volunteerForm = reactive({
@@ -32,6 +28,15 @@ const app = createApp({
             can_deliver: false
         });
         const volunteerLoading = ref(false);
+
+        // Donation form
+        const donationForm = reactive({
+            name: '',
+            amount: 1000,
+            message: '',
+            is_anonymous: false
+        });
+        const donationLoading = ref(false);
         
         // UI
         const showDonationModal = ref(false);
@@ -44,18 +49,19 @@ const app = createApp({
 
         // Computed
         const filteredNews = computed(() => {
-            if (!newsFilter.value) return news.value;
-            return news.value.filter(item => item.category === newsFilter.value);
+            if (!newsFilter.value) return news.value.items;
+            return news.value.items.filter(item => item.category === newsFilter.value);
         });
 
         const filteredDrives = computed(() => {
-            return drives.value.filter(d => d.status === 'активен');
+            if (!drivesFilter.value) return drives.value.items;
+            return drives.value.items.filter(item => item.status === drivesFilter.value);
         });
 
         // Methods
         const fetchStats = async () => {
             try {
-                const response = await fetch('/api/settings');
+                const response = await fetch('/api/public/stats');
                 const data = await response.json();
                 stats.value = data;
             } catch (e) {
@@ -65,7 +71,11 @@ const app = createApp({
 
         const fetchDrives = async () => {
             try {
-                const response = await fetch('/api/drives?active=true');
+                let url = `/api/public/drives`
+                if (drivesFilter.value) {
+                    url += `?status=${encodeURIComponent(drivesFilter.value)}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
                 drives.value = data;
             } catch (e) {
@@ -75,13 +85,17 @@ const app = createApp({
 
         const fetchNews = async () => {
             try {
-                const response = await fetch('/api/news');
+                let url = `/api/public/news`
+                if (newsFilter.value) {
+                    url += `?status=${encodeURIComponent(newsFilter.value)}`;
+                }
+                const response = await fetch(url);
                 const data = await response.json();
                 news.value = data;
-                // Set first as featured if available
                 if (data.length > 0) {
                     featuredArticle.value = data[0];
                 }
+
             } catch (e) {
                 console.error('Failed to fetch news', e);
             }
@@ -94,42 +108,10 @@ const app = createApp({
             }
         };
 
-        const submitDonation = async () => {
-            donationLoading.value = true;
-            try {
-                const response = await fetch('/api/donations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: donationForm.name,
-                        amount: donationForm.amount,
-                        message: donationForm.message,
-                        is_anonymous: donationForm.is_anonymous
-                    })
-                });
-                if (response.ok) {
-                    showNotification('Спасибо за ваше пожертвование!', 'success');
-                    donationForm.name = '';
-                    donationForm.amount = 1000;
-                    donationForm.message = '';
-                    donationForm.is_anonymous = false;
-                    showDonationModal.value = false;
-                    fetchStats(); // update total
-                } else {
-                    const err = await response.json();
-                    showNotification(err.error || 'Ошибка при отправке', 'error');
-                }
-            } catch (e) {
-                showNotification('Ошибка сети', 'error');
-            } finally {
-                donationLoading.value = false;
-            }
-        };
-
         const submitVolunteer = async () => {
             volunteerLoading.value = true;
             try {
-                const response = await fetch('/api/volunteers', {
+                const response = await fetch('/api/public/volunteers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -142,6 +124,7 @@ const app = createApp({
                     })
                 });
                 if (response.ok) {
+                    fetchStats();
                     showNotification('Спасибо за желание помочь! Мы свяжемся с вами.', 'success');
                     volunteerForm.name = '';
                     volunteerForm.email = '';
@@ -160,6 +143,39 @@ const app = createApp({
             }
         };
 
+        const submitDonation = async () => {
+            donationLoading.value = true;
+            try {
+                const response = await fetch('/api/public/donations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: donationForm.is_anonymous ? 'Аноним' : donationForm.name,
+                        amount: donationForm.amount,
+                        message: donationForm.message,
+                        is_anonymous: donationForm.is_anonymous
+                    })
+                });
+                if (response.ok) {
+                    fetchStats();
+                    showNotification('Спасибо за ваше пожертвование!', 'success');
+                    donationForm.name = '';
+                    donationForm.amount = 1000;
+                    donationForm.message = '';
+                    donationForm.is_anonymous = false;
+                    showDonationModal.value = false;
+
+                } else {
+                    const err = await response.json();
+                    showNotification(err.error || 'Ошибка при отправке', 'error');
+                }
+            } catch (e) {
+                showNotification('Ошибка сети', 'error');
+            } finally {
+                donationLoading.value = false;
+            }
+        };
+
         const showDonationForDrive = (driveId) => {
             // Could pre-fill drive info
             showDonationModal.value = true;
@@ -171,6 +187,10 @@ const app = createApp({
 
         const setNewsFilter = (filter) => {
             newsFilter.value = filter;
+        };
+
+        const setDrivesFilter = (filter) => {
+            drivesFilter.value = filter;
         };
 
         const getCategoryName = (cat) => {
@@ -224,6 +244,7 @@ const app = createApp({
         return {
             stats,
             drives,
+            drivesFilter,
             news,
             featuredArticle,
             newsFilter,
@@ -235,6 +256,7 @@ const app = createApp({
             volunteerLoading,
             showDonationModal,
             notification,
+            setDrivesFilter,
             scrollTo,
             submitDonation,
             submitVolunteer,

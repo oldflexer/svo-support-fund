@@ -78,15 +78,23 @@
                         </a>
                     </div>
                     
-                    <div class="nav-section">
-                        <h4><i class="fas fa-users"></i> Управление</h4>
+                    <div v-if="currentUser.role === 'admin' || currentUser.role === 'moderator'" class="nav-section">
+                        <h4><i class="fas fa-users"></i> Модерация</h4>
                         <a @click="setActiveTab('donations')" :class="{active: activeTab === 'donations'}">
                             <i class="fas fa-donate"></i> Пожертвования
-                            <span class="badge">${ stats.donations?.total_new_donations || 0 }</span>
+                            <span class="badge">${ sidebarData?.count_new_donations || 0 }</span>
+                        </a>
+                        <a @click="setActiveTab('drives')" :class="{active: activeTab === 'drives'}">
+                            <i class="fas fa-flag"></i> Сборы
+                            <span class="badge">${ sidebarData?.count_active_drives || 0 }</span>
+                        </a>
+                        <a @click="setActiveTab('news')" :class="{active: activeTab === 'news'}">
+                            <i class="fas fa-newspaper"></i> Новости
+                            <span class="badge">${ sidebarData?.count_not_verified_news || 0 }</span>
                         </a>
                         <a @click="setActiveTab('volunteers')" :class="{active: activeTab === 'volunteers'}">
                             <i class="fas fa-hands-helping"></i> Волонтёры
-                            <span class="badge">${ stats.volunteers?.total || 0 }</span>
+                            <span class="badge">${ sidebarData?.count_new_volunteers || 0 }</span>
                         </a>
                     </div>
                     
@@ -98,6 +106,9 @@
                         <a @click="setActiveTab('audit')" :class="{active: activeTab === 'audit'}">
                             <i class="fas fa-clipboard-list"></i> Логи действий
                         </a>
+                    </div>
+
+                    <div class="nav-section">
                         <a @click="setActiveTab('settings')" :class="{active: activeTab === 'settings'}">
                             <i class="fas fa-cog"></i> Настройки
                         </a>
@@ -138,11 +149,11 @@
                                 <i class="fas fa-hand-holding-heart"></i>
                             </div>
                             <div class="stat-content">
-                                <h3>${ formatCurrency(stats.donations?.total_amount || 0) }</h3>
+                                <h3>${ formatCurrency(dashboardData?.donations.total_amount || 0) }</h3>
                                 <p>Всего собрано</p>
                                 <div class="stat-trend">
                                     <i class="fas fa-arrow-up"></i>
-                                    <span>+${ formatPercent(stats.donations?.change || 0) } за неделю</span>
+                                    <span>+${ formatPercent(dashboardData?.donations.change || 0) } за неделю</span>
                                 </div>
                             </div>
                         </div>
@@ -152,7 +163,7 @@
                                 <i class="fas fa-paper-plane"></i>
                             </div>
                             <div class="stat-content">
-                                <h3>${ stats.donations?.total || 0 }</h3>
+                                <h3>${ dashboardData?.donations.total || 0 }</h3>
                                 <p>Пожертвований</p>
                             </div>
                         </div>
@@ -162,7 +173,7 @@
                                 <i class="fas fa-hands-helping"></i>
                             </div>
                             <div class="stat-content">
-                                <h3>${ stats.volunteers?.total || 0 }</h3>
+                                <h3>${ dashboardData?.volunteers.total || 0 }</h3>
                                 <p>Волонтёров</p>
                             </div>
                         </div>
@@ -175,7 +186,7 @@
                         <div class="recent-card second-row-item">
                             <h3><i class="fas fa-clock"></i> Последние пожертвования</h3>
                             <div class="recent-list">
-                                <div v-for="donation in recentDonations" :key="donation.id" class="recent-item">
+                                <div v-for="donation in dashboardData?.donations.recent_donations" :key="donation.id" class="recent-item">
                                     <div class="recent-info">
                                         <strong>${ donation.donor_name }</strong>
                                         <span class="amount">${ formatCurrency(donation.amount) }</span>
@@ -184,6 +195,151 @@
                                         <span class="status-badge" :class="donation.status">${ donation.status }</span>
                                         <span class="date">${ formatDate(donation.created_at) }</span>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Статистика" -->
+                <div v-if="activeTab === 'stats'" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
+                    </div>
+                    
+                    <div v-if="statsLoading" class="loading-spinner">Загрузка...</div>
+                    <div v-else-if="statsError" class="alert alert-error">${ statsError }</div>
+                    <div v-else-if="statsData" class="stats-grid">
+                        
+                        <div class="stats-section">
+                            <h3><i class="fas fa-donate"></i> Пожертвования</h3>
+                            <div class="stats-cards">
+                                <div class="stat-card small">
+                                    <div class="stat-label">Всего</div>
+                                    <div class="stat-value">${ statsData.donations.count_donations }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Новые</div>
+                                    <div class="stat-value">${ statsData.donations.count_new_donations }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Обработано</div>
+                                    <div class="stat-value">${ statsData.donations.count_processed_donations }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Отправлено</div>
+                                    <div class="stat-value">${ statsData.donations.count_sent_donations }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Мин. сумма</div>
+                                    <div class="stat-value">${ formatCurrency(statsData.donations.min_donation) }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Макс. сумма</div>
+                                    <div class="stat-value">${ formatCurrency(statsData.donations.max_donation) }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Всего сумма</div>
+                                    <div class="stat-value">${ formatCurrency(statsData.donations.sum_donation) }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Средняя</div>
+                                    <div class="stat-value">${ formatCurrency(statsData.donations.avg_donation) }</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-section">
+                            <h3><i class="fas fa-box-open"></i> Сборы</h3>
+                            <div class="stats-cards">
+                                <div class="stat-card small">
+                                    <div class="stat-label">Всего</div>
+                                    <div class="stat-value">${ statsData.drives.count_drives }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Активные</div>
+                                    <div class="stat-value">${ statsData.drives.count_active_drives }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Завершённые</div>
+                                    <div class="stat-value">${ statsData.drives.count_completed_drives }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Приостановленные</div>
+                                    <div class="stat-value">${ statsData.drives.count_suspended_drives }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Собрано</div>
+                                    <div class="stat-value">${ formatCurrency(statsData.drives.sum_collected_drives) }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Требуется</div>
+                                    <div class="stat-value">${ formatCurrency(statsData.drives.sum_needed_drives) }</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-section">
+                            <h3><i class="fas fa-newspaper"></i> Новости</h3>
+                            <div class="stats-cards">
+                                <div class="stat-card small">
+                                    <div class="stat-label">Всего</div>
+                                    <div class="stat-value">${ statsData.news.count_news }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Верифицировано</div>
+                                    <div class="stat-value">${ statsData.news.count_verified_news }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Не верифицировано</div>
+                                    <div class="stat-value">${ statsData.news.count_not_verified_news }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Новости</div>
+                                    <div class="stat-value">${ statsData.news.count_category_news }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Отчёты</div>
+                                    <div class="stat-value">${ statsData.news.count_category_report }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Истории</div>
+                                    <div class="stat-value">${ statsData.news.count_category_story }</div>
+                                </div>
+                            </div>
+                            
+                            <h4>Топ-3 по просмотрам</h4>
+                            <div class="top-news-list">
+                                <div v-for="(item, index) in statsData.news.top_news" :key="item.id" class="top-news-item">
+                                    <span class="rank">${ index + 1 }</span>
+                                    <span class="title">${ item.title }</span>
+                                    <span class="views">${ item.views_count } просмотров</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-section">
+                            <h3><i class="fas fa-hands-helping"></i> Волонтёры</h3>
+                            <div class="stats-cards">
+                                <div class="stat-card small">
+                                    <div class="stat-label">Всего</div>
+                                    <div class="stat-value">${ statsData.volunteers.count_volunteers }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Новые</div>
+                                    <div class="stat-value">${ statsData.volunteers.count_new_volunteers }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Связались</div>
+                                    <div class="stat-value">${ statsData.volunteers.count_in_touch_volunteers }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">Активные</div>
+                                    <div class="stat-value">${ statsData.volunteers.count_active_volunteers }</div>
+                                </div>
+                                <div class="stat-card small">
+                                    <div class="stat-label">В архиве</div>
+                                    <div class="stat-value">${ statsData.volunteers.count_archive_volunteers }</div>
                                 </div>
                             </div>
                         </div>
@@ -238,15 +394,107 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <tr v-if="donations.items.length === 0">
+                                    <td colspan="7" class="text-center">Нет записей</td>
+                                </tr>
                             </tbody>
                         </table>
                         
                         <div class="pagination" v-if="donations.pages > 1">
-                            <button @click="prevDonationsPage" :disabled="donations.current_page === 1">
+                            <button @click="prevDonationsPage" :disabled="donations.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            <span>Страница ${ donations.current_page } из ${ donations.pages }</span>
-                            <button @click="nextDonationsPage" :disabled="donations.current_page === donations.pages">
+                            <span>Страница ${ donations.page } из ${ donations.pages }</span>
+                            <button @click="nextDonationsPage" :disabled="donations.page === donations.pages">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Сборы" -->
+                <div v-if="activeTab === 'drives'" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-box-open"></i> Управление сборами</h2>
+                        <div class="tab-actions">
+                            <select v-model="driveStatusFilter" class="filter-select">
+                                <option value="">Все статусы</option>
+                                <option value="активен">Активен</option>
+                                <option value="завершен">Завершен</option>
+                                <option value="приостановлен">Приостановлен</option>
+                            </select>
+                            <button @click="openAddDriveModal" class="btn-primary">
+                                <i class="fas fa-plus"></i> Добавить сбор
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Название</th>
+                                    <th>Необходимо</th>
+                                    <th>Статус</th>
+                                    <th>Собрано</th>
+                                    <th>Нужно</th>
+                                    <th>Прогресс</th>
+                                    <th>Дата создания</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="drive in drives.items" :key="drive.id">
+                                    <td>${ drive.id }</td>
+                                    <td>${ drive.title }</td>
+                                    <td>
+                                        <ul class="needs-list">
+                                            <li v-for="(need, idx) in drive.needs.slice(0, 2)" :key="idx">
+                                                ${ need }
+                                            </li>
+                                            <li v-if="drive.needs.length > 2">...</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge" :class="drive.status">
+                                            ${ drive.status }
+                                        </span>
+                                    </td>
+                                    <td>${ formatCurrency(drive.collected) }</td>
+                                    <td>${ formatCurrency(drive.needed) }</td>
+                                    <td>
+                                        <div class="progress-small">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" :style="{ width: drive.progress + '%' }"></div>
+                                            </div>
+                                            <span>${ drive.progress }%</span>
+                                        </div>
+                                    </td>
+                                    <td>${ formatDate(drive.created_at) }</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button @click="editDrive(drive)" class="btn-icon" title="Редактировать">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button @click="confirmDeleteDrive(drive.id)" class="btn-icon btn-danger" title="Удалить">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="drives.items.length === 0">
+                                    <td colspan="9" class="text-center">Нет записей</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="pagination" v-if="drives.pages > 1">
+                            <button @click="prevDrivesPage" :disabled="drives.page === 1">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span>Страница ${ drives.page } из ${ drives.pages }</span>
+                            <button @click="nextDrivesPage" :disabled="drives.page === drives.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -309,15 +557,18 @@
                                         </select>
                                     </td>
                                 </tr>
+                                <tr v-if="filteredVolunteers.length === 0">
+                                    <td colspan="10" class="text-center">Нет записей</td>
+                                </tr>
                             </tbody>
                         </table>
                         
-                        <div class="pagination" v-if="donations.pages > 1">
-                            <button @click="prevDonationsPage" :disabled="donations.current_page === 1">
+                        <div class="pagination" v-if="volunteers.pages > 1">
+                            <button @click="prevVolunteersPage" :disabled="volunteers.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                            <span>Страница ${ donations.current_page } из ${ donations.pages }</span>
-                            <button @click="nextDonationsPage" :disabled="donations.current_page === donations.pages">
+                            <span>Страница ${ volunteers.page } из ${ volunteers.pages }</span>
+                            <button @click="nextVolunteersPage" :disabled="volunteers.page === volunteers.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -349,7 +600,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="user in adminUsers" :key="user.id">
+                                <tr v-for="user in adminUsers.items" :key="user.id">
                                     <td>${ user.id }</td>
                                     <td>${ user.username }</td>
                                     <td>${ user.email }</td>
@@ -366,7 +617,7 @@
                                     <td>${ formatDate(user.created_at) }</td>
                                     <td>${ user.last_login ? formatDate(user.last_login) : '—' }</td>
                                     <td>
-                                        <div class="action-buttons">
+                                        <div v-if="currentUser.role === 'admin'" class="action-buttons">
                                             <button @click="editUser(user)" class="btn-icon" title="Редактировать">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -378,8 +629,75 @@
                                         </div>
                                     </td>
                                 </tr>
+                                <tr v-if="adminUsers.items.length === 0">
+                                    <td colspan="9" class="text-center">Нет записей</td>
+                                </tr>
                             </tbody>
                         </table>
+
+                        <div class="pagination" v-if="adminUsers.pages > 1">
+                            <button @click="prevUsersPage" :disabled="adminUsers.page === 1">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span>Страница ${ adminUsers.page } из ${ adminUsers.pages }</span>
+                            <button @click="nextUsersPage" :disabled="adminUsers.page === adminUsers.pages">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Логи действий" -->
+                <div v-if="activeTab === 'audit'" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-clipboard-list"></i> Логи действий</h2>
+                        <div class="tab-actions">
+                            <!-- Фильтр по пользователю (опционально) -->
+                            <select v-model="auditFilters.user_id" class="filter-select">
+                                <option :value="null">Все пользователи</option>
+                                <option v-for="user in adminUsers?.items || []" :key="user.id" :value="user.id">
+                                    [${ user.id }] ${ user.username }
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Пользователь</th>
+                                    <th>Действие</th>
+                                    <th>Детали</th>
+                                    <th>IP адрес</th>
+                                    <th>Дата и время</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="log in auditLogs?.items || []" :key="log.id">
+                                    <td>${ log.id }</td>
+                                    <td>${ log.username }</td>
+                                    <td>${ log.action }</td>
+                                    <td>${ log.details }</td>
+                                    <td>${ log.ip_address }</td>
+                                    <td>${ formatDate(log.created_at) }</td>
+                                </tr>
+                                <tr v-if="auditLogs.items.length === 0">
+                                    <td colspan="6" class="text-center">Нет записей</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="pagination" v-if="auditLogs.pages > 1">
+                            <button @click="prevAuditPage" :disabled="auditLogs.page === 1">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span>Страница ${ auditLogs.page } из ${ auditLogs.pages }</span>
+                            <button @click="nextAuditPage" :disabled="auditLogs.page === auditLogs.pages">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -628,6 +946,79 @@
                     </div>
                 </div>
 
+                <!-- Модальное окно сбора -->
+                <div v-if="showDriveModal" class="modal-overlay" @click="showDriveModal = false">
+                    <div class="modal-content modal-lg" @click.stop>
+                        <div class="modal-header">
+                            <h3>
+                                <i class="fas" :class="driveModalMode === 'add' ? 'fa-plus-circle' : 'fa-edit'"></i>
+                                ${ driveModalMode === 'add' ? 'Добавить сбор' : 'Редактировать сбор' }
+                            </h3>
+                            <button @click="showDriveModal = false" class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="saveDrive" class="modal-form" id="driveForm">
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label>Название *</label>
+                                        <input type="text" v-model="driveForm.title" required>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label>Описание</label>
+                                        <textarea v-model="driveForm.description" rows="3"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label>Необходимое (каждый пункт с новой строки)</label>
+                                        <textarea 
+                                            v-model="needsText" 
+                                            rows="4" 
+                                            placeholder="Квадрокоптер&#10;Аптечка&#10;Тепловизор"
+                                            @input="updateNeedsFromText"
+                                        ></textarea>
+                                        <small class="form-help">Введите каждый пункт с новой строки</small>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Статус</label>
+                                        <select v-model="driveForm.status">
+                                            <option value="активен">Активен</option>
+                                            <option value="завершен">Завершен</option>
+                                            <option value="приостановлен">Приостановлен</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Собрано (руб)</label>
+                                        <input type="number" v-model="driveForm.collected" min="0">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Нужно собрать (руб) *</label>
+                                        <input type="number" v-model="driveForm.needed" min="1" required>
+                                    </div>
+                                </div>
+                                
+                                <div v-if="driveError" class="alert alert-error">
+                                    <i class="fas fa-exclamation-circle"></i> ${ driveError }
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="modal-actions">
+                                <button type="button" @click="showDriveModal = false" class="btn-secondary">
+                                    <i class="fas fa-times"></i> Отмена
+                                </button>
+                                <button type="submit" form="driveForm" class="btn-primary" :disabled="driveLoading">
+                                    <i class="fas fa-save"></i> 
+                                    ${ driveLoading ? 'Сохранение...' : (driveModalMode === 'add' ? 'Создать' : 'Сохранить') }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div v-if="showUserModal" class="modal-overlay" @click="showUserModal = false">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
@@ -697,11 +1088,11 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label><i class="fas fa-user"></i> Логин *</label>
-                                        <input type="text" v-model="userForm.username" required>
+                                        <input type="text" v-model="userForm.username">
                                     </div>
                                     <div class="form-group">
                                         <label><i class="fas fa-envelope"></i> Email *</label>
-                                        <input type="email" v-model="userForm.email" required>
+                                        <input type="email" v-model="userForm.email">
                                     </div>
                                     <div class="form-group">
                                         <label><i class="fas fa-id-card"></i> ФИО</label>
@@ -709,7 +1100,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label><i class="fas fa-lock"></i> Пароль *</label>
-                                        <input type="password" v-model="userForm.password" required minlength="6">
+                                        <input type="password" v-model="userForm.password" minlength="6">
                                     </div>
                                     <div class="form-group">
                                         <label><i class="fas fa-user-tag"></i> Роль</label>

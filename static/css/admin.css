@@ -18,6 +18,33 @@
     --border-radius: 8px;
 }
 
+.stats-section {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.stats-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.stats-section h4 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 1.1rem;
+    color: #374151;
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
 /* Страница логина */
 .login-container {
     min-height: 100vh;
@@ -398,7 +425,7 @@
 .stat-card {
     background: white;
     border-radius: 8px;
-    padding: 3rem;
+    padding: 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: center;
@@ -407,6 +434,78 @@
 
 .stat-card.large {
     grid-column: span 2;
+}
+
+.stat-card.small {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 6px;
+    padding: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.stat-card.small:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.stat-card.small .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-card.small .stat-value {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #111827;
+}
+
+.top-news-list {
+    margin-top: 1rem;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.top-news-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.top-news-item:last-child {
+    border-bottom: none;
+}
+
+.top-news-item .rank {
+    width: 2rem;
+    height: 2rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+}
+
+.top-news-item .title {
+    flex: 1;
+    font-weight: 500;
+}
+
+.top-news-item .views {
+    color: #6b7280;
+    font-size: 0.9rem;
 }
 
 .stat-icon {
@@ -564,7 +663,7 @@
     font-weight: 600;
 }
 
-.status-badge.ожидает, .новый, .неактивен {
+.status-badge.ожидает, .новый, .неактивен, .приостановлен {
     background: #fef3c7;
     color: #92400e;
 }
@@ -579,7 +678,7 @@
     color: #1e40af;
 }
 
-.status-badge.архив {
+.status-badge.архив, .завершен {
     background: var(--admin-gray);
     color: var(--primary-dark);
 }
@@ -834,6 +933,10 @@
     }
     
     .stat-card.large {
+        grid-column: span 1;
+    }
+
+    .stat-card.small {
         grid-column: span 1;
     }
 }
