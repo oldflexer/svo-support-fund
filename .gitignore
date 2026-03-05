@@ -1,10 +1,7 @@
-.gitignore
 __pycache__/
 .memory/
 .venv/
 .vscode/
-instance/*
-static/docs/*
-uploads/*
-project_structure_mermaid.md
-svo_support_fund.code-workspace
+*.db
+*.pdf
+*.code-workspace
