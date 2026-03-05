@@ -1,0 +1,107 @@
+import os
+
+from flask import Flask, render_template, send_from_directory
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+
+from config import config
+from models import db, User
+from public import public_bp
+from admin import admin_bp
+from auth import auth_bp
+
+# -------------------------------
+# Initialize
+# -------------------------------
+
+# Create Flask app
+app = Flask(__name__, static_folder='static', template_folder='templates')
+env = os.environ.get('FLASK_ENV', 'default')
+app.config.from_object(config[env])
+
+# Initialize extensions
+CORS(app)
+db.init_app(app)
+jwt = JWTManager(app)
+
+# Ensure upload folder exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+with app.app_context():
+    # Initialize database
+    db.create_all()
+
+    # Create admin if not exists
+    if not User.query.filter_by(username='admin').first():
+        administrator = User(
+            username='admin',
+            email='admin@example.com',
+            full_name='Administrator',
+            role='admin',
+            is_active=True
+        )
+        administrator.set_password('Admin123!')
+
+        db.session.add(administrator)
+        
+        moderator = User(
+            username='moderator',
+            email='moderator@example.com',
+            full_name='Moderator',
+            role='moderator',
+            is_active=True
+        )
+        moderator.set_password('Moderator123!')
+
+        db.session.add(moderator)
+
+        db.session.commit()
+        print('Initial users created.')
+
+    print('Database initialized.')
+
+
+# -------------------------------
+# Frontend routes
+# -------------------------------
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
+@app.route('/static/<path:path>')
+def send_static(path):
+    return send_from_directory('static', path)
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# -------------------------------
+# API: Public
+# -------------------------------
+
+app.register_blueprint(public_bp)
+
+# -------------------------------
+# API: Admin
+# -------------------------------
+
+app.register_blueprint(admin_bp)
+
+# -------------------------------
+# API: Auth
+# -------------------------------
+
+app.register_blueprint(auth_bp)
+
+# -------------------------------
+# App run
+# -------------------------------
+
+if __name__ == '__main__':
+    app.run(debug=True)

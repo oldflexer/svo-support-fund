@@ -1,9 +1,7 @@
 __pycache__/
-.continue/
 .memory/
 .venv/
 .vscode/
-backend/instance/svo_fund.db
-svo_support_fund.code-workspace
 *.db
 *.pdf
+*.code-workspace
