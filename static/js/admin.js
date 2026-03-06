@@ -37,6 +37,62 @@ const app = createApp({
         const statsLoading = ref(false);
         const statsError = ref('');
 
+        // Drives
+        const showDriveModal = ref(false);
+        const driveModalMode = ref('add'); // 'add' или 'edit'
+        const editingDriveId = ref(null);
+        const driveForm = reactive({
+            title: '',
+            description: '',
+            needs: [],
+            status: 'активен', // активен, завершен, приостановлен
+            collected: 0,
+            needed: 0
+        });
+        const driveLoading = ref(false);
+        const driveError = ref('');
+        const needsText = ref('');
+
+        // News
+        const news = ref({ items: [], total: 0, page: 1, pages: 1});
+
+        const newsCategoryFilter = ref('');
+        const newsVerifiedFilter = ref(''); // 'true', 'false', '' - все
+
+        const showNewsModal = ref(false);
+        const newsModalMode = ref('add'); // 'add' или 'edit'
+        const editingNewsId = ref(null);
+        const newsForm = reactive({
+            title: '',
+            slug: '',
+            excerpt: '',
+            content: '',
+            category: 'новости',
+            is_verified: false,
+            main_image: ''
+        });
+        const newsLoading = ref(false);
+        const newsError = ref('');
+
+        const translitMap = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
+            'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'j', 'к': 'k', 'л': 'l', 'м': 'm',
+            'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
+            'ф': 'f', 'х': 'h', 'ц': 'cz', 'ч': 'ch', 'ш': 'sh', 'щ': 'shh',
+            'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+            'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'E',
+            'Ж': 'Zh', 'З': 'Z', 'И': 'I', 'Й': 'J', 'К': 'K', 'Л': 'L', 'М': 'M',
+            'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U',
+            'Ф': 'F', 'Х': 'H', 'Ц': 'Cz', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shh',
+            'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya',
+            ' ': '-', ',': '', '.': '', '!': '', '?': '', ':': '', ';': '', '"': '',
+            "'": '', '(': '', ')': '', '[': '', ']': '', '{': '', '}': '', '/': '',
+            '\\': '', '|': '', '@': '', '#': '', '$': '', '%': '', '^': '', '&': '',
+            '*': '', '+': '', '=': '', '~': '', '`': '', '<': '', '>': ''
+        };
+
+        const slugManuallyEdited = ref(false);
+
         // New user modal
         const showUserModal = ref(false);
         const userLoading = ref(false);
@@ -54,23 +110,6 @@ const app = createApp({
         const editUserModal = ref(false);
         const editingUserId = ref(null);
         
-        // Drives
-        const showDriveModal = ref(false);
-        const driveModalMode = ref('add'); // 'add' или 'edit'
-        const editingDriveId = ref(null);
-        const driveForm = reactive({
-            title: '',
-            description: '',
-            needs: [],
-            status: 'активен', // активен, завершен, приостановлен
-            collected: 0,
-            needed: 0
-        });
-        const driveLoading = ref(false);
-        const driveError = ref('');
-
-        const needsText = ref('');
-        
         // UI state
         const activeTab = ref('dashboard');
         const notification = reactive({ show: false, type: 'success', icon: '', message: '' });
@@ -79,7 +118,6 @@ const app = createApp({
         const donations = ref({ items: [], total: 0, page: 1, pages: 1 });
         const recentDonations = ref([]);
         const drives = ref({ items: [], total: 0, page: 1, pages: 1});
-        const news = ref({ items: [], total: 0, page: 1, pages: 1});
         const volunteers = ref({ items: [], total: 0, page: 1, pages: 1 });
         const adminUsers = ref({ items: [], total: 0, page: 1, pages: 1 });
         const auditLogs = ref({ items: [], total: 0, page: 1, pages: 1 });
@@ -265,7 +303,22 @@ const app = createApp({
                 sidebarLoading.value = false;
             }
         };
-        // Diman imposter
+        
+        watch(() => statsData.count_new_donations, () => {
+            loadSidebar();
+        });
+
+        watch(() => statsData.count_active_drives, () => {
+            loadSidebar();
+        });
+
+        watch(() => statsData.count_not_verified_news, () => {
+            loadSidebar();
+        });
+
+        watch(() => statsData.count_new_volunteers, () => {
+            loadSidebar();
+        });
 
         const loadDashboard = async () => {
             try {
@@ -374,7 +427,7 @@ const app = createApp({
                     throw new Error(errorData.error || 'Ошибка при обновлении статуса');
                 }
 
-                loadDashboard()
+                loadSidebar()
 
                 showNotification('Статус обновлен');
                 
@@ -507,6 +560,178 @@ const app = createApp({
             driveForm.needs = needsText.value.split('\n').filter(line => line.trim() !== '');
         };
 
+        const loadNews = async (page = 1) => {
+            try {
+                let url = `/api/admin/news?page=${page}`;
+                const params = new URLSearchParams();
+                if (newsCategoryFilter.value) params.append('category', newsCategoryFilter.value);
+                if (newsVerifiedFilter.value) params.append('verified', newsVerifiedFilter.value);
+                if (params.toString()) url += '&' + params.toString();
+
+                const response = await apiFetch(url);
+                const data = await response.json();
+                news.value = data;
+            } catch (e) {
+                console.error('Ошибка загрузки новостей:', e);
+            }
+        };
+
+        const openAddNewsModal = () => {
+            newsModalMode.value = 'add';
+            editingNewsId.value = null;
+            resetNewsForm();
+            showNewsModal.value = true;
+        };
+
+        const editNews = (item) => {
+            newsModalMode.value = 'edit';
+            editingNewsId.value = item.id;
+            newsForm.title = item.title;
+            newsForm.slug = item.slug;
+            newsForm.excerpt = item.excerpt || '';
+            newsForm.content = item.content || '';
+            newsForm.category = item.category;
+            newsForm.is_verified = item.is_verified;
+            newsForm.main_image = item.main_image || '';
+            showNewsModal.value = true;
+        };
+
+        const resetNewsForm = () => {
+            newsForm.title = '';
+            newsForm.slug = '';
+            newsForm.excerpt = '';
+            newsForm.content = '';
+            newsForm.category = 'новости';
+            newsForm.is_verified = false;
+            newsForm.main_image = '';
+            newsError.value = '';
+        };
+
+        const saveNews = async () => {
+            newsLoading.value = true;
+            newsError.value = '';
+            try {
+                let url = '/api/admin/news';
+                let method = 'POST';
+                if (newsModalMode.value === 'edit') {
+                    url = `/api/admin/news/${editingNewsId.value}`;
+                    method = 'PUT';
+                }
+                const response = await apiFetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newsForm)
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка сохранения');
+                }
+                showNotification(
+                    newsModalMode.value === 'add' ? 'Новость создана' : 'Новость обновлена',
+                    'success'
+                );
+                showNewsModal.value = false;
+                resetNewsForm();
+                loadNews(news.value.page);
+            } catch (e) {
+                newsError.value = e.message;
+            } finally {
+                newsLoading.value = false;
+            }
+        };
+
+        const confirmDeleteNews = (id) => {
+            if (confirm('Вы уверены, что хотите удалить эту новость?')) {
+                deleteNews(id);
+            }
+        };
+
+        const deleteNews = async (id) => {
+            try {
+                const response = await apiFetch(`/api/admin/news/${id}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка удаления');
+                }
+                showNotification('Новость удалена', 'success');
+                loadNews(news.value.page);
+            } catch (e) {
+                showNotification(e.message, 'error');
+            }
+        };
+
+        const prevNewsPage = () => {
+            if (news.value.page > 1) {
+                loadNews(news.value.page - 1);
+            }
+        };
+        const nextNewsPage = () => {
+            if (news.value.page < news.value.pages) {
+                loadNews(news.value.page + 1);
+            }
+        };
+
+        watch([newsCategoryFilter, newsVerifiedFilter], () => {
+            loadNews(1);
+        });
+
+        const uploadNewsImage = async (file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await apiFetch('/api/admin/upload?upload_folder=news', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('Ошибка загрузки');
+                const data = await response.json();
+                newsForm.main_image = data.url;
+                showNotification('Изображение загружено', 'success');
+            } catch (e) {
+                showNotification(e.message, 'error');
+            }
+        };
+
+        const generateSlug = (text) => {
+            if (!text) return '';
+            return text
+                .split('')
+                .map(ch => translitMap[ch] || '')
+                .join('')
+                .replace(/-+/g, '-')       // убираем повторяющиеся дефисы
+                .replace(/^-|-$/g, '')      // убираем дефисы в начале и конце
+                .toLowerCase();
+        };
+
+        watch(() => newsForm.title, (newTitle, oldTitle) => {
+            if (!slugManuallyEdited.value && newTitle) {
+                const generated = generateSlug(newTitle);
+                if (!newsForm.slug || newsForm.slug === generateSlug(oldTitle)) {
+                    newsForm.slug = generated;
+                }
+            }
+        });
+
+        watch(() => newsForm.slug, (newSlug) => {
+            if (newSlug && newSlug !== generateSlug(newsForm.title)) {
+                slugManuallyEdited.value = true;
+            }
+        });
+
+        watch(showNewsModal, (val) => {
+            if (val && newsModalMode.value === 'add') {
+                slugManuallyEdited.value = false;
+            }
+        });
+
+        watch(() => newsModalMode.value, (mode) => {
+            if (mode === 'edit') {
+                slugManuallyEdited.value = true;
+            }
+        });
+
         const loadVolunteers = async (page = 1) => {
             try {
                 let url = `/api/admin/volunteers?page=${page}`;
@@ -550,7 +775,7 @@ const app = createApp({
                     throw new Error(errorData.error || 'Ошибка при обновлении статуса');
                 }
 
-                loadDashboard()
+                loadSidebar()
 
                 showNotification('Статус обновлен');
 
@@ -773,12 +998,13 @@ const app = createApp({
         });
 
         const setActiveTab = (tab) => {
-            loadSidebar();
             activeTab.value = tab;
+            if (tab) loadSidebar();
             if (tab === 'dashboard') loadDashboard();
             if (tab === 'stats') loadStats();
             if (tab === 'donations') loadDonations(1);
             if (tab === 'drives') loadDrives(1);
+            if (tab === 'news') loadNews(1);
             if (tab === 'volunteers') loadVolunteers();
             if (tab === 'users') loadAdminUsers(1);
             if (tab === 'audit') loadAudit(1);
@@ -791,6 +1017,7 @@ const app = createApp({
                 stats: 'Статистика',
                 donations: 'Пожертвования',
                 drives: 'Сборы',
+                news: 'Новости',
                 volunteers: 'Волонтёры',
                 users: 'Администраторы',
                 audit: 'Логи действий',
@@ -805,7 +1032,8 @@ const app = createApp({
                 stats: 'Подробная статистика',
                 donations: 'Управление входящими пожертвованиями',
                 drives: 'Управление сборами',
-                volunteers: 'Заявки волонтёров',
+                news: 'Управление новостной лентой',
+                volunteers: 'Управление заявками волонтёров',
                 users: 'Управление администраторами и модераторами',
                 audit: 'Аудит последних действий администраторов',
                 settings: 'Настройки'
@@ -942,17 +1170,14 @@ const app = createApp({
                     .then(user => {
                         currentUser.value = user;
                         isAuthenticated.value = true;
+                        loadSidebar();
                         loadDashboard();
-                        loadAdminUsers();
-                        loadAudit();
                     })
                     .catch(() => {
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('refresh_token');
                     });
             }
-
-            loadSidebar()
         });
 
         return {
@@ -975,6 +1200,19 @@ const app = createApp({
             statsData,
             statsLoading,
             statsError,
+
+            news,
+            newsCategoryFilter,
+            newsVerifiedFilter,
+            showNewsModal,
+            newsModalMode,
+            editingNewsId,
+            newsForm,
+            newsLoading,
+            newsError,
+
+            translitMap,
+            slugManuallyEdited,
 
             showUserModal,
             userLoading,
@@ -1036,6 +1274,19 @@ const app = createApp({
             prevDrivesPage,
             nextDrivesPage,
             updateNeedsFromText,
+
+            openAddNewsModal,
+            editNews,
+            resetNewsForm,
+            saveNews,
+            confirmDeleteNews,
+            deleteNews,
+            prevNewsPage,
+            nextNewsPage,
+
+            uploadNewsImage,
+
+            generateSlug,
 
             prevVolunteersPage,
             nextVolunteersPage,

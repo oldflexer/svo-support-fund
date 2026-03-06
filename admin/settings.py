@@ -13,12 +13,11 @@ from . import admin_bp
 @jwt_required()
 @role_required('admin', 'moderator')
 def get_settings():
-    total_donated = get_setting('total_donated', '0')
-    total_volunteers = get_setting('total_volunteers', '0')
-    print(total_donated, total_volunteers)
+    sum_donation = get_setting('sum_donation', '0')
+    count_volunteers = get_setting('count_volunteers', '0')
     return jsonify({
-        'total_donated': int(total_donated),
-        'total_volunteers': int(total_volunteers)
+        'sum_donation': int(sum_donation),
+        'count_volunteers': int(count_volunteers)
     }), 200
 
 @admin_bp.route('/settings', methods=['PUT'])

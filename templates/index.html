@@ -78,7 +78,7 @@
             <!-- Текущие сборы -->
             <section id="current-drives" class="section">
                 <h2 class="section-title">
-                    <i class="fas fa-flag"></i> Текущие сборы
+                    <i class="fas fa-box-open"></i> Текущие сборы
                 </h2>
 
                 <div class="drives-filters">
@@ -216,15 +216,7 @@
                             <p class="news-excerpt">${ article.excerpt }</p>
                             <div class="news-meta">
                                 <span class="meta-item">
-                                    <i class="far fa-calendar"></i> ${ article.published_at }
-                                </span>
-                                <span v-if="article.region" class="meta-item">
-                                    <i class="fas fa-map-marker-alt"></i> ${ article.region }
-                                </span>
-                            </div>
-                            <div class="news-tags">
-                                <span v-for="tag in article.tags.slice(0, 2)" :key="tag" class="tag">
-                                    ${ tag }
+                                    <i class="far fa-calendar"></i> ${ formatDate(article.published_at) }
                                 </span>
                             </div>
                         </div>
@@ -493,10 +485,12 @@
         <footer class="footer">
             <div class="container">
                 <div class="footer-content">
-                    <div class="footer-brand">
-                        <img src="../static/img/logo.png" width="64" height="64">
-                        <span class="logo-text">Защитим Родину</span>
-                        <p class="footer-slogan">Вместе мы сила. Вместе мы поможем.</p>
+                    <div class="footer-brand" href="#start" @click.prevent="scrollTo('start')">
+                        <div class="brand-row">
+                            <img src="../static/img/logo.png" width="64" height="64">
+                            <span class="logo-text">Защитим Родину</span>
+                        </div>
+                        <p class="footer-slogan">Вместе мы сила - фронт и тыл едины!</p>
                     </div>
                     
                     <div class="footer-links">

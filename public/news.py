@@ -26,7 +26,7 @@ def get_news():
         'is_verified': a.is_verified,
         'views_count': a.views_count,
         'read_time': a.read_time,
-        'published_at': a.published_at.isoformat() if a.published_at else None
+        'published_at': a.published_at.isoformat() + 'Z' if a.published_at else None
     } for a in query]
     
     return jsonify({

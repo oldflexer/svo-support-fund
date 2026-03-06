@@ -52,7 +52,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: 2rem;
 }
 
 .nav-brand {
@@ -573,42 +573,17 @@ body {
 }
 
 .drive-header {
-    padding: 0.75rem 1rem;
-<<<<<<< HEAD:frontend/style.css
-    color: white;
-=======
->>>>>>> refactored:static/css/style.css
+    padding: 1rem 1rem 0rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-<<<<<<< HEAD:frontend/style.css
-.drive-header.urgency-critical {
-    background: linear-gradient(135deg, #e53e3e, #c53030);
-}
-
-.drive-header.urgency-high {
-    background: linear-gradient(135deg, #ed8936, #dd6b20);
-}
-
-.drive-header.urgency-normal {
-    background: linear-gradient(135deg, #38a169, #2f855a);
-}
-
-.drive-urgency {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    font-size: 0.9rem;
-=======
 .drive-header h3 {
-    padding: 0.75rem 1rem;
+    padding: 0rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
->>>>>>> refactored:static/css/style.css
 }
 
 .drive-status {
@@ -619,7 +594,7 @@ body {
 }
 
 .drive-content {
-    padding: 1.5rem;
+    padding: 0rem 1rem 1rem 1rem;
 }
 
 .drive-content h3 {
@@ -1032,10 +1007,7 @@ body {
     line-height: 1.5;
     margin-bottom: 1rem;
     display: -webkit-box;
-<<<<<<< HEAD:frontend/style.css
-=======
     line-clamp: 3;
->>>>>>> refactored:static/css/style.css
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -1120,12 +1092,23 @@ body {
 .footer-brand {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    max-width: 150px;
+    cursor: pointer;
+}
+
+.brand-row {
+    display: flex;
+    align-items: center;
     gap: 1rem;
 }
 
 .footer-slogan {
     opacity: 0.8;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    margin: 0;
+    width: 300px;
 }
 
 .footer-links,

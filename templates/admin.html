@@ -81,11 +81,11 @@
                     <div v-if="currentUser.role === 'admin' || currentUser.role === 'moderator'" class="nav-section">
                         <h4><i class="fas fa-users"></i> Модерация</h4>
                         <a @click="setActiveTab('donations')" :class="{active: activeTab === 'donations'}">
-                            <i class="fas fa-donate"></i> Пожертвования
+                            <i class="fas fa-ruble-sign"></i> Пожертвования
                             <span class="badge">${ sidebarData?.count_new_donations || 0 }</span>
                         </a>
                         <a @click="setActiveTab('drives')" :class="{active: activeTab === 'drives'}">
-                            <i class="fas fa-flag"></i> Сборы
+                            <i class="fas fa-box-open"></i> Сборы
                             <span class="badge">${ sidebarData?.count_active_drives || 0 }</span>
                         </a>
                         <a @click="setActiveTab('news')" :class="{active: activeTab === 'news'}">
@@ -106,9 +106,6 @@
                         <a @click="setActiveTab('audit')" :class="{active: activeTab === 'audit'}">
                             <i class="fas fa-clipboard-list"></i> Логи действий
                         </a>
-                    </div>
-
-                    <div class="nav-section">
                         <a @click="setActiveTab('settings')" :class="{active: activeTab === 'settings'}">
                             <i class="fas fa-cog"></i> Настройки
                         </a>
@@ -212,7 +209,7 @@
                     <div v-else-if="statsData" class="stats-grid">
                         
                         <div class="stats-section">
-                            <h3><i class="fas fa-donate"></i> Пожертвования</h3>
+                            <h3><i class="fas fa-ruble-sign"></i> Пожертвования</h3>
                             <div class="stats-cards">
                                 <div class="stat-card small">
                                     <div class="stat-label">Всего</div>
@@ -349,7 +346,7 @@
                 <!-- Управление пожертвованиями -->
                 <div v-if="activeTab === 'donations'" class="tab-content">
                     <div class="tab-header">
-                        <h2><i class="fas fa-donate"></i> Управление пожертвованиями</h2>
+                        <h2><i class="fas fa-ruble-sign"></i> Управление пожертвованиями</h2>
                         <div class="tab-actions">
                             <select v-model="donationStatusFilter" class="filter-select">
                                 <option value="">Все статусы</option>
@@ -501,10 +498,90 @@
                     </div>
                 </div>
 
+                <!-- Вкладка "Новости" -->
+                <div v-if="activeTab === 'news'" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-newspaper"></i> Управление новостями</h2>
+                        <div class="tab-actions">
+                            <select v-model="newsCategoryFilter" class="filter-select">
+                                <option value="">Все категории</option>
+                                <option value="новости">Новости</option>
+                                <option value="отчёт">Отчёты</option>
+                                <option value="история">Истории</option>
+                            </select>
+                            <select v-model="newsVerifiedFilter" class="filter-select">
+                                <option value="">Все статусы</option>
+                                <option value="true">Верифицировано</option>
+                                <option value="false">Не верифицировано</option>
+                            </select>
+                            <button @click="openAddNewsModal" class="btn-primary">
+                                <i class="fas fa-plus"></i> Добавить новость
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Заголовок</th>
+                                    <th>Категория</th>
+                                    <th>Верифицировано</th>
+                                    <th>Просмотры</th>
+                                    <th>Дата</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in news" :key="item.id">
+                                    <td>${ item.id }</td>
+                                    <td>${ item.title }</td>
+                                    <td>
+                                        <span class="category-badge" :class="item.category">
+                                            ${ item.category === 'новости' ? 'Новость' : (item.category === 'отчёт' ? 'Отчёт' : 'История') }
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge" :class="item.is_verified ? 'активен' : 'неактивен'">
+                                            ${ item.is_verified ? 'Да' : 'Нет' }
+                                        </span>
+                                    </td>
+                                    <td>${ item.views_count || 0 }</td>
+                                    <td>${ formatDate(item.published_at || item.created_at) }</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button @click="editNews(item)" class="btn-icon" title="Редактировать">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button @click="confirmDeleteNews(item.id)" class="btn-icon btn-danger" title="Удалить">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="news.length === 0">
+                                    <td colspan="7" class="text-center">Нет записей</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="pagination" v-if="news.pages > 1">
+                            <button @click="prevNewsPage" :disabled="news.page === 1">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span>Страница ${ news.page } из ${ news.pages }</span>
+                            <button @click="nextNewsPage" :disabled="news.page === news.pages">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Управление волонтёрами -->
                 <div v-if="activeTab === 'volunteers'" class="tab-content">
                     <div class="tab-header">
-                        <h2><i class="fas fa-donate"></i> Управление волонтёрами</h2>
+                        <h2><i class="fas fa-hands-helping"></i> Управление волонтёрами</h2>
                         <div class="tab-actions">
                             <select v-model="volunteerStatusFilter" class="filter-select">
                                 <option value="">Все статусы</option>
@@ -1019,6 +1096,97 @@
                     </div>
                 </div>
 
+                <!-- Модальное окно новости -->
+                <div v-if="showNewsModal" class="modal-overlay" @click="showNewsModal = false">
+                    <div class="modal-content modal-lg" @click.stop>
+                        <div class="modal-header">
+                            <h3>
+                                <i class="fas" :class="newsModalMode === 'add' ? 'fa-plus-circle' : 'fa-edit'"></i>
+                                ${ newsModalMode === 'add' ? 'Добавить новость' : 'Редактировать новость' }
+                            </h3>
+                            <button @click="showNewsModal = false" class="modal-close">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="saveNews" class="modal-form" id="newsForm">
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label>Заголовок *</label>
+                                        <input type="text" v-model="newsForm.title" required>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label>Slug (часть URL) *</label>
+                                        <div class="input-with-button">
+                                            <input type="text" v-model="newsForm.slug" required placeholder="naprimer-nazvanie-novosti">
+                                            <button type="button" @click="newsForm.slug = generateSlug(newsForm.title); slugManuallyEdited = false" class="btn-secondary btn-small">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Категория</label>
+                                        <select v-model="newsForm.category">
+                                            <option value="новости">Новости</option>
+                                            <option value="отчёт">Отчёт</option>
+                                            <option value="история">История</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Регион</label>
+                                        <input type="text" v-model="newsForm.region" placeholder="Например: Москва">
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label>Краткое описание</label>
+                                        <textarea v-model="newsForm.excerpt" rows="2" placeholder="Краткое описание для анонса"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label>Полный текст</label>
+                                        <textarea v-model="newsForm.content" rows="6" placeholder="Основной текст новости..."></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" v-model="newsForm.is_verified">
+                                            <span>Верифицировано (проверено)</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label>Изображение</label>
+                                        <div class="image-upload">
+                                            <input type="file" accept="image/*" @change="e => uploadNewsImage(e.target.files[0])">
+                                            <div v-if="newsForm.main_image" class="image-preview">
+                                                <img :src="newsForm.main_image" alt="Preview">
+                                                <button type="button" @click="newsForm.main_image = ''" class="btn-icon btn-danger">✕</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div v-if="newsError" class="alert alert-error">
+                                    <i class="fas fa-exclamation-circle"></i> ${ newsError }
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <div class="modal-actions">
+                                <button type="button" @click="showNewsModal = false" class="btn-secondary">
+                                    <i class="fas fa-times"></i> Отмена
+                                </button>
+                                <button type="submit" form="newsForm" class="btn-primary" :disabled="newsLoading">
+                                    <i class="fas fa-save"></i> 
+                                    ${ newsLoading ? 'Сохранение...' : (newsModalMode === 'add' ? 'Создать' : 'Сохранить') }
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Модальное окно нового пользователя -->
                 <div v-if="showUserModal" class="modal-overlay" @click="showUserModal = false">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
@@ -1077,6 +1245,7 @@
                     </div>
                 </div>
 
+                <!-- Модальное окно редактирования пользователя -->
                 <div v-if="editUserModal" class="modal-overlay" @click="editUserModal = false">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">

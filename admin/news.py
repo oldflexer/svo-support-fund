@@ -1,3 +1,5 @@
+from tkinter import N
+
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, NewsArticle
@@ -13,11 +15,22 @@ from . import admin_bp
 @jwt_required()
 @role_required('admin', 'moderator')
 def get_news():
-    category = request.args.get('category')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    category = request.args.get('category', None)
+    is_verified = request.args.get('verified', None)
+
     query = NewsArticle.query
-    if category:
+
+    if category is not None:
         query = query.filter_by(category=category)
-    news = query.order_by(NewsArticle.published_at.desc()).all()
+
+    if is_verified is not None:
+        is_verified = is_verified.lower() == 'true'
+        query = query.filter_by(is_verified=is_verified)
+
+    pagination = query.order_by(NewsArticle.published_at.desc()).paginate(page=page, per_page=per_page)
+    
     result = [{
         'id': a.id,
         'title': a.title,
@@ -28,8 +41,9 @@ def get_news():
         'is_verified': a.is_verified,
         'views_count': a.views_count,
         'read_time': a.read_time,
-        'published_at': a.published_at.isoformat() if a.published_at else None
-    } for a in news]
+        'published_at': a.published_at.isoformat() + 'Z' if a.published_at else None
+    } for a in pagination]
+    
     return jsonify(result), 200
 
 @admin_bp.route('/news/<slug>', methods=['GET'])
@@ -48,7 +62,7 @@ def get_news_detail(slug):
         'is_verified': article.is_verified,
         'views_count': article.views_count,
         'read_time': article.read_time,
-        'published_at': article.published_at.isoformat() if article.published_at else None
+        'published_at': article.published_at.isoformat() + 'Z' if article.published_at else None
     }), 200
 
 @admin_bp.route('/news', methods=['POST'])
@@ -56,6 +70,7 @@ def get_news_detail(slug):
 @role_required('admin', 'moderator')
 def create_news():
     data = request.get_json() or {}
+
     form = NewsForm(data=data)
     # if not form.validate():
     #     return jsonify({'errors': form.errors}), 400
