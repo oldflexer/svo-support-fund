@@ -105,6 +105,12 @@ const app = createApp({
             role: 'moderator',
             is_active: true
         });
+
+        // Settings
+        const settingsData = ref({});
+        const settingsLoading = ref(false);
+        const settingsSaving = ref(false);
+        const settingsError = ref('');
         
         // Edit user modal
         const editUserModal = ref(false);
@@ -732,6 +738,49 @@ const app = createApp({
             }
         });
 
+        const loadSettings = async () => {
+            settingsLoading.value = true;
+            settingsError.value = '';
+            try {
+                const response = await apiFetch('/api/admin/settings');
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки настроек');
+                }
+                settingsData.value = await response.json();
+            } catch (e) {
+                settingsError.value = e.message;
+            } finally {
+                settingsLoading.value = false;
+            }
+        };
+
+        const saveSettings = async () => {
+            settingsSaving.value = true;
+            settingsError.value = '';
+            try {
+                const response = await apiFetch('/api/admin/settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settingsData.value)
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Ошибка сохранения');
+                }
+                showNotification('Настройки сохранены', 'success');
+            } catch (e) {
+                settingsError.value = e.message;
+            } finally {
+                settingsSaving.value = false;
+            }
+        };
+
+        const resetSettings = () => {
+            if (confirm('Сбросить все изменения?')) {
+                loadSettings();
+            }
+        };
+
         const loadVolunteers = async (page = 1) => {
             try {
                 let url = `/api/admin/volunteers?page=${page}`;
@@ -1214,6 +1263,11 @@ const app = createApp({
             translitMap,
             slugManuallyEdited,
 
+            settingsData,
+            settingsLoading,
+            settingsSaving,
+            settingsError,
+
             showUserModal,
             userLoading,
             userError,
@@ -1287,6 +1341,9 @@ const app = createApp({
             uploadNewsImage,
 
             generateSlug,
+
+            saveSettings,
+            resetSettings,
 
             prevVolunteersPage,
             nextVolunteersPage,

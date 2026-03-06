@@ -956,6 +956,75 @@
     font-size: 0.875rem;
 }
 
+.settings-grid {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-section {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+}
+
+.settings-form .form-group {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.settings-form label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #374151;
+}
+
+.settings-form input[type="text"],
+.settings-form input[type="email"],
+.settings-form input[type="url"],
+.settings-form input[type="number"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.settings-form input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.settings-form .checkbox label {
+    display: flex;
+    align-items: left;
+    font-weight: normal;
+}
+
+.settings-section .form-group.checkbox {
+    margin-bottom: 0.5rem;
+}
+
+.settings-section .form-group.checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.settings-section .form-group.checkbox input[type="checkbox"] {
+    margin: 0;
+    width: auto;
+}
+
 /* Адаптивность */
 @media (max-width: 1024px) {
     .sidebar {

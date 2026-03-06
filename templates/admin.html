@@ -128,7 +128,7 @@
                         <p>${ getTabDescription() }</p>
                     </div>
                     <div class="header-right">
-                        <div class="user-info">
+                        <div class="user-info" @click="open2FAModal" style="cursor: pointer;" title="Управление двухфакторной аутентификацией">
                             <i class="fas fa-user-circle"></i>
                             <span>${ currentUser.username }</span>
                         </div>
@@ -775,6 +775,134 @@
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Настройки" -->
+                <div v-if="activeTab === 'settings'" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-cog"></i> Настройки сайта</h2>
+                        <div class="tab-actions">
+                            <button @click="resetSettings" class="btn-primary" :disabled="settingsLoading">
+                                <i class="fas fa-undo"></i> Сбросить
+                            </button>
+                            <button @click="saveSettings" class="btn-primary" :disabled="settingsLoading || settingsSaving">
+                                <i class="fas fa-save"></i> ${ settingsSaving ? 'Сохранение...' : 'Сохранить' }
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="settingsLoading" class="loading-spinner">Загрузка...</div>
+                    <div v-else-if="settingsError" class="alert alert-error">${ settingsError }</div>
+                    <div v-else class="settings-grid">
+                        <form @submit.prevent="saveSettings" class="settings-form">
+                            <!-- Основные настройки -->
+                            <div class="settings-section">
+                                <h3>Основные</h3>
+                                <div class="form-group">
+                                    <label>Название фонда</label>
+                                    <input type="text" v-model="settingsData['site_title']" placeholder="Например: Защитим Родину">
+                                </div>
+                                <div class="form-group">
+                                    <label>Короткое название (для логотипа)</label>
+                                    <input type="text" v-model="settingsData['site_short_name']" placeholder="Защитим">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email для связи</label>
+                                    <input type="email" v-model="settingsData['contact_email']" placeholder="info@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Телефон</label>
+                                    <input type="text" v-model="settingsData['contact_phone']" placeholder="+7 (800) 555-35-35">
+                                </div>
+                                <div class="form-group">
+                                    <label>Адрес</label>
+                                    <input type="text" v-model="settingsData['contact_address']" placeholder="г. Москва, ул. Примерная, д. 1">
+                                </div>
+                            </div>
+
+                            <!-- Социальные сети -->
+                            <div class="settings-section">
+                                <h3>Социальные сети</h3>
+                                <div class="form-group">
+                                    <label><i class="fab fa-vk"></i> VK</label>
+                                    <input type="url" v-model="settingsData['social_vk']" placeholder="https://vk.com/...">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fab fa-telegram"></i> Telegram</label>
+                                    <input type="url" v-model="settingsData['social_telegram']" placeholder="https://t.me/...">
+                                </div>
+                                <div class="form-group">
+                                    <label><img src="../static/img/logo_MAX.png" width="16" height="16"> MAX</label>
+                                    <input type="url" v-model="settingsData['social_max']" placeholder="...">
+                                </div>
+                            </div>
+
+                            <!-- Реквизиты -->
+                            <div class="settings-section">
+                                <h3>Реквизиты</h3>
+                                <div class="form-group">
+                                    <label>ИНН</label>
+                                    <input type="text" v-model="settingsData['inn']">
+                                </div>
+                                <div class="form-group">
+                                    <label>ОГРН</label>
+                                    <input type="text" v-model="settingsData['ogrn']">
+                                </div>
+                                <div class="form-group">
+                                    <label>Расчётный счёт</label>
+                                    <input type="text" v-model="settingsData['bank_account']">
+                                </div>
+                                <div class="form-group">
+                                    <label>Банк</label>
+                                    <input type="text" v-model="settingsData['bank_name']">
+                                </div>
+                                <div class="form-group">
+                                    <label>Корр. счёт</label>
+                                    <input type="text" v-model="settingsData['corr_account']">
+                                </div>
+                                <div class="form-group">
+                                    <label>БИК</label>
+                                    <input type="text" v-model="settingsData['bik']">
+                                </div>
+                            </div>
+
+                            <!-- Статистика (редактируемая, но обычно вычисляется автоматически) -->
+                            <div class="settings-section">
+                                <h3>Статистика (отображается на главной)</h3>
+                                <div class="form-group">
+                                    <label>Волонтёров</label>
+                                    <input type="number" v-model="settingsData['count_volunteers']" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Собрано средств (руб)</label>
+                                    <input type="number" v-model="settingsData['sum_donation']" min="0">
+                                </div>
+                            </div>
+
+                            <!-- Дополнительные настройки (вкл/выкл модули) -->
+                            <div class="settings-section">
+                                <h3>Дополнительно</h3>
+                                <div class="form-group checkbox">
+                                    <label>
+                                        <input type="checkbox" v-model="settingsData['enable_donations']" true-value="true" false-value="false">
+                                        Включить пожертвования
+                                    </label>
+                                </div>
+                                <div class="form-group checkbox">
+                                    <label>
+                                        <input type="checkbox" v-model="settingsData['enable_volunteers']" true-value="true" false-value="false">
+                                        Включить приём заявок волонтёров
+                                    </label>
+                                </div>
+                                <div class="form-group checkbox">
+                                    <label>
+                                        <input type="checkbox" v-model="settingsData['enable_news']" true-value="true" false-value="false">
+                                        Включить новости
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
