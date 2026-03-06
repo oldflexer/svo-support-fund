@@ -108,5 +108,6 @@ def get_current_user():
         'username': user.username,
         'full_name': user.full_name,
         'email': user.email,
-        'role': user.role
+        'role': user.role,
+        'two_factor_enabled': user.two_factor_enabled
     }), 200

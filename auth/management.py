@@ -78,7 +78,7 @@ def verify_2fa():
     user.last_login = datetime.utcnow()
     db.session.commit()
     
-    log_action(get_jwt_identity(), 'login_2fa', 'Успешный вход с 2FA', request.remote_addr)
+    log_action(user.id, 'login_2fa', 'Успешный вход с 2FA', request.remote_addr)
     
     return jsonify({
         'access_token': access_token,

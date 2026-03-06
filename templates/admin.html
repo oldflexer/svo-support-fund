@@ -915,242 +915,6 @@
                     <button @click="notification.show = false" class="notification-close">&times;</button>
                 </div>
 
-                <!-- Модальное окно 2FA -->
-                <div v-if="twoFactorModal" class="modal-overlay" @click="twoFactorModal = false">
-                    <div class="modal-content modal-lg" @click.stop>
-                        <div class="modal-header">
-                            <h3>
-                                <img src="../static/img/logo.png" width="64" height="64">
-                                <span v-if="twoFactorStep === 'setup'">Настройка двухфакторной аутентификации</span>
-                                <span v-if="twoFactorStep === 'verify'">Подтверждение входа</span>
-                                <span v-if="twoFactorStep === 'enable'">Включение 2FA</span>
-                                <span v-if="twoFactorStep === 'disable'">Отключение 2FA</span>
-                            </h3>
-                            <button @click="twoFactorModal = false" class="modal-close">&times;</button>
-                        </div>
-                        
-                        <div class="modal-body">
-                            <!-- Шаг 1: Настройка (показ QR кода) -->
-                            <div v-if="twoFactorStep === 'setup'" class="two-factor-setup">
-                                <div class="setup-instructions">
-                                    <h4><i class="fas fa-mobile-alt"></i> Инструкция по настройке:</h4>
-                                    <ol>
-                                        <li>Установите приложение для аутентификации (Google Authenticator, Microsoft Authenticator и т.д.)</li>
-                                        <li>Отсканируйте QR код ниже или введите секретный ключ вручную</li>
-                                        <li>Введите 6-значный код из приложения для подтверждения</li>
-                                        <li>Сохраните резервные коды в безопасном месте</li>
-                                    </ol>
-                                    
-                                    <div class="recommended-apps">
-                                        <h5>Рекомендуемые приложения:</h5>
-                                        <div class="apps-grid">
-                                            <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" 
-                                                target="_blank" class="app-link">
-                                                <i class="fab fa-google"></i> Google Authenticator
-                                            </a>
-                                            <a href="https://www.microsoft.com/ru-ru/security/mobile-authenticator-app" 
-                                                target="_blank" class="app-link">
-                                                <i class="fab fa-microsoft"></i> Microsoft Authenticator
-                                            </a>
-                                            <a href="https://authy.com/" target="_blank" class="app-link">
-                                                <i class="fas fa-mobile-alt"></i> Authy
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="qr-code-section">
-                                    <div class="qr-container">
-                                        <img :src="twoFactorData.qr_code" alt="QR Code" v-if="twoFactorData.qr_code">
-                                        <div v-else class="qr-placeholder">
-                                            <i class="fas fa-qrcode"></i>
-                                            <p>Загрузка QR кода...</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="manual-setup">
-                                        <h5><i class="fas fa-keyboard"></i> Ручная настройка:</h5>
-                                        <div class="secret-key">
-                                            <label>Секретный ключ:</label>
-                                            <div class="secret-display">
-                                                <code>${ twoFactorData.secret || 'Загрузка...' }</code>
-                                                <button @click="copyToClipboard(twoFactorData.secret)" class="btn-icon">
-                                                    <i class="fas fa-copy"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="account-info">
-                                            <p><strong>Аккаунт:</strong> ${ currentUser.email }</p>
-                                            <p><strongТип:</strong> TOTP (Time-based)</p>
-                                            <p><strong>Длина кода:</strong> 6 цифр</p>
-                                            <p><strong>Период:</strong> 30 секунд</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="setup-action">
-                                    <button @click="twoFactorStep = 'enable'" class="btn-primary">
-                                        <i class="fas fa-check-circle"></i> Перейти к подтверждению
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Шаг 2: Ввод кода для включения -->
-                            <div v-if="twoFactorStep === 'enable'" class="two-factor-verify">
-                                <div class="verify-instructions">
-                                    <h4><i class="fas fa-mobile-alt"></i> Подтверждение настройки</h4>
-                                    <p>Введите 6-значный код из приложения аутентификатора:</p>
-                                </div>
-                                
-                                <div class="verify-form">
-                                    <div class="form-group">
-                                        <label>Код подтверждения:</label>
-                                        <input type="text" 
-                                                v-model="twoFactorForm.token" 
-                                                placeholder="123456"
-                                                maxlength="6"
-                                                pattern="[0-9]*"
-                                                inputmode="numeric"
-                                                autocomplete="one-time-code">
-                                        <small class="form-help">6 цифр из приложения аутентификатора</small>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" v-model="twoFactorForm.useBackup">
-                                            <span>Использовать резервный код</span>
-                                        </label>
-                                    </div>
-                                    
-                                    <div class="verify-actions">
-                                        <button @click="enableTwoFactor" class="btn-primary">
-                                            <i class="fas fa-check"></i> Подтвердить и включить
-                                        </button>
-                                        <button @click="twoFactorStep = 'setup'" class="btn-secondary">
-                                            <i class="fas fa-arrow-left"></i> Назад
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Шаг 3: Ввод кода при входе -->
-                            <div v-if="twoFactorStep === 'verify'" class="two-factor-login">
-                                <div class="login-verify">
-                                    <h4><img src="../static/img/logo.png" width="64" height="64"></i> Двухфакторная аутентификация</h4>
-                                    <p>Для входа в аккаунт <strong>${ twoFactorData.username }</strong> требуется подтверждение.</p>
-                                    
-                                    <div class="verify-form">
-                                        <div class="form-group">
-                                            <label>Код из приложения:</label>
-                                            <input type="text" 
-                                                    v-model="twoFactorForm.token" 
-                                                    placeholder="Введите 6 цифр"
-                                                    maxlength="6"
-                                                    pattern="[0-9]*"
-                                                    inputmode="numeric"
-                                                    autocomplete="one-time-code"
-                                                    autofocus>
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" v-model="twoFactorForm.useBackup">
-                                                <span>Использовать резервный код</span>
-                                            </label>
-                                        </div>
-                                        
-                                        <div class="backup-help" v-if="twoFactorForm.useBackup">
-                                            <p><i class="fas fa-exclamation-triangle"></i> 
-                                                Резервные коды - это одноразовые коды. После использования код станет недействительным.</p>
-                                        </div>
-                                        
-                                        <button @click="verifyTwoFactor" class="btn-primary btn-block">
-                                            <i class="fas fa-sign-in-alt"></i> Подтвердить вход
-                                        </button>
-                                    </div>
-                                    
-                                    <div class="login-help">
-                                        <h5><i class="fas fa-question-circle"></i> Нет доступа к приложению?</h5>
-                                        <ul>
-                                            <li>Используйте резервные коды (отметьте галочку выше)</li>
-                                            <li>Обратитесь к администратору для восстановления доступа</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Шаг 4: Отключение 2FA -->
-                            <div v-if="twoFactorStep === 'disable'" class="two-factor-disable">
-                                <div class="disable-warning">
-                                    <div class="warning-icon">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </div>
-                                    <h4>Отключение двухфакторной аутентификации</h4>
-                                    <p>После отключения 2FA безопасность вашего аккаунта снизится.</p>
-                                    <p>Для подтверждения введите пароль или текущий код 2FA:</p>
-                                </div>
-                                
-                                <div class="disable-form">
-                                    <div class="form-group">
-                                        <label>Пароль:</label>
-                                        <input type="password" 
-                                                v-model="twoFactorForm.password" 
-                                                placeholder="Введите пароль">
-                                    </div>
-                                    
-                                    <div class="form-divider">
-                                        <span>или</span>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Код 2FA:</label>
-                                        <input type="text" 
-                                                v-model="twoFactorForm.token" 
-                                                placeholder="Введите 6 цифр"
-                                                maxlength="6">
-                                    </div>
-                                    
-                                    <div class="disable-actions">
-                                        <button @click="disableTwoFactor" class="btn-danger">
-                                            <i class="fas fa-ban"></i> Отключить 2FA
-                                        </button>
-                                        <button @click="twoFactorModal = false" class="btn-secondary">
-                                            <i class="fas fa-times"></i> Отмена
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Резервные коды -->
-                            <div v-if="twoFactorData.backup_codes" class="backup-codes-section">
-                                <div class="backup-header">
-                                    <h4><i class="fas fa-key"></i> Резервные коды</h4>
-                                    <p>Сохраните эти коды в безопасном месте. Каждый код можно использовать один раз.</p>
-                                </div>
-                                
-                                <div class="backup-codes-grid">
-                                    <div v-for="(code, index) in twoFactorData.backup_codes" :key="index" class="backup-code">
-                                        <code>${ code }</code>
-                                    </div>
-                                </div>
-                                
-                                <div class="backup-actions">
-                                    <button @click="downloadBackupCodes" class="btn-secondary">
-                                        <i class="fas fa-download"></i> Скачать коды
-                                    </button>
-                                    <button @click="regenerateBackupCodes" class="btn-warning">
-                                        <i class="fas fa-redo"></i> Сгенерировать новые
-                                    </button>
-                                    <button @click="copyToClipboard(twoFactorData.backup_codes.join('\n'))" class="btn-icon">
-                                        <i class="fas fa-copy"></i> Копировать все
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Модальное окно сбора -->
                 <div v-if="showDriveModal" class="modal-overlay" @click="showDriveModal = false">
                     <div class="modal-content modal-lg" @click.stop>
@@ -1437,6 +1201,246 @@
                 </div>
             </main>
         </div>
+
+        <!-- Модальное окно 2FA -->
+            <div v-if="twoFactorModal" class="modal-overlay" @click="twoFactorModal = false">
+                <div class="modal-content modal-lg" @click.stop>
+                    <div class="modal-header">
+                        <h3>
+                            <img src="../static/img/logo.png" width="64" height="64">
+                            <span v-if="twoFactorStep === 'setup'">Настройка двухфакторной аутентификации</span>
+                            <span v-if="twoFactorStep === 'verify'">Подтверждение входа</span>
+                            <span v-if="twoFactorStep === 'enable'">Включение 2FA</span>
+                            <span v-if="twoFactorStep === 'disable'">Отключение 2FA</span>
+                        </h3>
+                        <button @click="twoFactorModal = false" class="modal-close">&times;</button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <!-- Шаг 1: Настройка (показ QR кода) -->
+                        <div v-if="twoFactorStep === 'setup'" class="two-factor-setup">
+                            <div class="setup-instructions">
+                                <h4><i class="fas fa-mobile-alt"></i> Инструкция по настройке:</h4>
+                                <ol>
+                                    <li>Установите приложение для аутентификации (Google Authenticator, Microsoft Authenticator и т.д.)</li>
+                                    <li>Отсканируйте QR код ниже или введите секретный ключ вручную</li>
+                                    <li>Введите 6-значный код из приложения для подтверждения</li>
+                                    <li>Сохраните резервные коды в безопасном месте</li>
+                                </ol>
+                                
+                                <div class="recommended-apps">
+                                    <h5>Рекомендуемые приложения:</h5>
+                                    <div class="apps-grid">
+                                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" 
+                                            target="_blank" class="app-link">
+                                            <i class="fab fa-google"></i> Google Authenticator
+                                        </a>
+                                        <a href="https://www.microsoft.com/ru-ru/security/mobile-authenticator-app" 
+                                            target="_blank" class="app-link">
+                                            <i class="fab fa-microsoft"></i> Microsoft Authenticator
+                                        </a>
+                                        <a href="https://authy.com/" target="_blank" class="app-link">
+                                            <i class="fas fa-mobile-alt"></i> Authy
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="qr-code-section">
+                                <div class="qr-container">
+                                    <img :src="twoFactorData.qr_code" alt="QR Code" v-if="twoFactorData.qr_code">
+                                    <div v-else class="qr-placeholder">
+                                        <i class="fas fa-qrcode"></i>
+                                        <p>Загрузка QR кода...</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="manual-setup">
+                                    <h5><i class="fas fa-keyboard"></i> Ручная настройка:</h5>
+                                    <div class="secret-key">
+                                        <label>Секретный ключ:</label>
+                                        <div class="secret-display">
+                                            <code>${ twoFactorData.secret || 'Загрузка...' }</code>
+                                            <button @click="copyToClipboard(twoFactorData.secret)" class="btn-icon">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="account-info">
+                                        <p><strong>Аккаунт:</strong> ${ currentUser.email }</p>
+                                        <p><strong>Тип: TOTP (Time-based)</p>
+                                        <p><strong>Длина кода:</strong> 6 цифр</p>
+                                        <p><strong>Период:</strong> 30 секунд</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="setup-action">
+                                <button @click="twoFactorStep = 'enable'" class="btn-primary">
+                                    <i class="fas fa-check-circle"></i> Перейти к подтверждению
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаг 2: Ввод кода для включения -->
+                        <div v-if="twoFactorStep === 'enable'" class="two-factor-verify">
+                            <div class="verify-instructions">
+                                <h4><i class="fas fa-mobile-alt"></i> Подтверждение настройки</h4>
+                                <p>Введите 6-значный код из приложения аутентификатора:</p>
+                            </div>
+                            
+                            <div class="verify-form">
+                                <div class="form-group">
+                                    <label>Код подтверждения:</label>
+                                    <input type="text" 
+                                            v-model="twoFactorForm.token" 
+                                            placeholder="123456"
+                                            maxlength="6"
+                                            pattern="[0-9]*"
+                                            inputmode="numeric"
+                                            autocomplete="one-time-code">
+                                    <small class="form-help">6 цифр из приложения аутентификатора</small>
+                                </div>
+                                                                
+                                <div class="verify-actions">
+                                    <button @click="enableTwoFactor" class="btn-primary">
+                                        <i class="fas fa-check"></i> Подтвердить и включить
+                                    </button>
+                                    <button @click="twoFactorStep = 'setup'" class="btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Назад
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаг 3: Ввод кода при входе -->
+                        <div v-if="twoFactorStep === 'verify'" class="two-factor-login">
+                            <div class="login-verify">
+                                <h4><img src="../static/img/logo.png" width="64" height="64"></i> Двухфакторная аутентификация</h4>
+                                <p>Для входа в аккаунт <strong>${ twoFactorData.username }</strong> требуется подтверждение.</p>
+                                
+                                <div class="verify-form">
+                                    <div v-if="!twoFactorForm.useBackup" class="form-group">
+                                        <label>Код из приложения:</label>
+                                        <input type="text" 
+                                                v-model="twoFactorForm.token" 
+                                                placeholder="Введите 6 цифр"
+                                                maxlength="6"
+                                                pattern="[0-9]*"
+                                                inputmode="numeric"
+                                                autocomplete="one-time-code"
+                                                autofocus>
+                                    </div>
+                                    <div v-else class="form-group">
+                                        <label>Код из приложения:</label>
+                                        <input type="text" 
+                                                v-model="twoFactorForm.token" 
+                                                placeholder="Введите 8 цифр"
+                                                maxlength="8"
+                                                pattern="[0-9]*"
+                                                inputmode="numeric"
+                                                autocomplete="one-time-code"
+                                                autofocus>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" v-model="twoFactorForm.useBackup">
+                                            <span>Использовать резервный код</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="backup-help" v-if="twoFactorForm.useBackup">
+                                        <p><i class="fas fa-exclamation-triangle"></i> 
+                                            Резервные коды - это одноразовые коды. После использования код станет недействительным.</p>
+                                    </div>
+                                    
+                                    <button @click="verifyTwoFactor" class="btn-primary btn-block">
+                                        <i class="fas fa-sign-in-alt"></i> Подтвердить вход
+                                    </button>
+                                </div>
+                                
+                                <div class="login-help">
+                                    <h5><i class="fas fa-question-circle"></i> Нет доступа к приложению?</h5>
+                                    <ul>
+                                        <li>Используйте резервные коды (отметьте галочку выше)</li>
+                                        <li>Обратитесь к администратору для восстановления доступа</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Шаг 4: Отключение 2FA -->
+                        <div v-if="twoFactorStep === 'disable'" class="two-factor-disable">
+                            <div class="disable-warning">
+                                <div class="warning-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <h4>Отключение двухфакторной аутентификации</h4>
+                                <p>После отключения 2FA безопасность вашего аккаунта снизится.</p>
+                                <p>Для подтверждения введите пароль или текущий код 2FA:</p>
+                            </div>
+                            
+                            <div class="disable-form">
+                                <div class="form-group">
+                                    <label>Пароль:</label>
+                                    <input type="password" 
+                                            v-model="twoFactorForm.password" 
+                                            placeholder="Введите пароль">
+                                </div>
+                                
+                                <div class="form-divider">
+                                    <span>или</span>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Код 2FA:</label>
+                                    <input type="text" 
+                                            v-model="twoFactorForm.token" 
+                                            placeholder="Введите 6 цифр"
+                                            maxlength="6">
+                                </div>
+                                
+                                <div class="disable-actions">
+                                    <button @click="disableTwoFactor" class="btn-danger">
+                                        <i class="fas fa-ban"></i> Отключить 2FA
+                                    </button>
+                                    <button @click="twoFactorModal = false" class="btn-secondary">
+                                        <i class="fas fa-times"></i> Отмена
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Резервные коды -->
+                        <div v-if="twoFactorData.backup_codes" class="backup-codes-section">
+                            <div class="backup-header">
+                                <h4><i class="fas fa-key"></i> Резервные коды</h4>
+                                <p>Сохраните эти коды в безопасном месте. Каждый код можно использовать один раз.</p>
+                            </div>
+                            
+                            <div class="backup-codes-grid">
+                                <div v-for="(code, index) in twoFactorData.backup_codes" :key="index" class="backup-code">
+                                    <code>${ code }</code>
+                                </div>
+                            </div>
+                            
+                            <div class="backup-actions">
+                                <button @click="downloadBackupCodes" class="btn-primary">
+                                    <i class="fas fa-download"></i> Скачать коды
+                                </button>
+                                <button @click="regenerateBackupCodes" class="btn-primary">
+                                    <i class="fas fa-redo"></i> Сгенерировать новые
+                                </button>
+                                <button @click="copyToClipboard(twoFactorData.backup_codes.join('\n'))" class="btn-primary">
+                                    <i class="fas fa-copy"></i> Копировать все
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
     </div>
 	
 	<script>

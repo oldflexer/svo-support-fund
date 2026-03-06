@@ -234,10 +234,22 @@ const app = createApp({
             }
         };
 
+        const open2FAModal = async () => {
+            // Если 2FA уже включена, показываем окно отключения
+            if (currentUser.value.two_factor_enabled) {
+                twoFactorStep.value = 'disable';
+                twoFactorModal.value = true;
+            } else {
+                // Если не включена – запускаем процесс настройки
+                await setupTwoFactor(); // этот метод должен получать QR-код и секрет
+                // setupTwoFactor сам установит twoFactorStep в 'setup' и откроет модалку
+            }
+        };
+
         const verifyTwoFactor = async () => {
             loading.value = true;
             try {
-                const response = await fetch('/api/auth/verify-2fa', {
+                const response = await fetch('/api/auth/2fa/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -253,11 +265,11 @@ const app = createApp({
                 }
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('refresh_token', data.refresh_token);
-                currentUser.value = data.user;
                 isAuthenticated.value = true;
                 twoFactorModal.value = false;
                 twoFactorForm.token = '';
                 twoFactorForm.useBackup = false;
+                setActiveTab('dashboard');
 
             } catch (e) {
                 showNotification('Ошибка сети', 'error');
@@ -1131,8 +1143,10 @@ const app = createApp({
             try {
                 const response = await apiFetch('/api/auth/2fa/enable', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: twoFactorForm.token })
                 });
+                console.log(response)
                 if (response.ok) {
                     showNotification('2FA успешно включена');
                     twoFactorModal.value = false;
@@ -1153,6 +1167,7 @@ const app = createApp({
             try {
                 const response = await apiFetch('/api/auth/2fa/disable', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         password: twoFactorForm.password,
                         token: twoFactorForm.token
@@ -1163,6 +1178,7 @@ const app = createApp({
                     twoFactorModal.value = false;
                     twoFactorForm.password = '';
                     twoFactorForm.token = '';
+                    currentUser.value = user
                 } else {
                     const err = await response.json();
                     showNotification(err.error || 'Ошибка', 'error');
@@ -1371,6 +1387,7 @@ const app = createApp({
             hasPermission,
 
             // 2FA
+            open2FAModal,
             setupTwoFactor,
             enableTwoFactor,
             disableTwoFactor,
