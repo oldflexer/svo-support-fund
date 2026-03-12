@@ -219,7 +219,7 @@ body {
 /* Основные секции */
 .section {
     padding: 5rem 0;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 .section-title {

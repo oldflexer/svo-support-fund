@@ -46,25 +46,6 @@ def get_news():
     
     return jsonify(result), 200
 
-@admin_bp.route('/news/<slug>', methods=['GET'])
-@jwt_required()
-@role_required('admin', 'moderator')
-def get_news_detail(slug):
-    article = NewsArticle.query.filter_by(slug=slug).first_or_404()
-    db.session.commit()
-    return jsonify({
-        'id': article.id,
-        'title': article.title,
-        'content': article.content,
-        'excerpt': article.excerpt,
-        'category': article.category,
-        'main_image': article.main_image,
-        'is_verified': article.is_verified,
-        'views_count': article.views_count,
-        'read_time': article.read_time,
-        'published_at': article.published_at.isoformat() + 'Z' if article.published_at else None
-    }), 200
-
 @admin_bp.route('/news', methods=['POST'])
 @jwt_required()
 @role_required('admin', 'moderator')
@@ -81,6 +62,7 @@ def create_news():
         excerpt=form.excerpt.data,
         content=form.content.data,
         category=form.category.data,
+        main_image=form.main_image.data,
         is_verified=form.is_verified.data
     )
     # Handle image upload separately
@@ -98,7 +80,7 @@ def update_news(id):
     article = NewsArticle.query.get_or_404(id)
     data = request.get_json() or {}
     # Update fields
-    for field in ['title', 'slug', 'excerpt', 'content', 'category', 'region', 'tags', 'is_verified']:
+    for field in ['title', 'slug', 'excerpt', 'content', 'category', 'main_image', 'is_verified']:
         if field in data:
             setattr(article, field, data[field])
     db.session.commit()

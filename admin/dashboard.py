@@ -46,10 +46,6 @@ def get_dashboard():
     else:
         change_sum_donations = 0
 
-    print(sum_donations_previous_week)
-    print(sum_donations_current_week)
-    print(change_sum_donations)
-
     # Donations count
     count_donations = Donation.query.count()
 

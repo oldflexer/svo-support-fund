@@ -26,6 +26,7 @@ class NewsForm(FlaskForm):
     excerpt = TextAreaField('Краткое описание')
     content = TextAreaField('Содержание')
     category = SelectField('Категория', choices=[('новости', 'Новости'), ('отчёт', 'Отчёт'), ('история', 'История')])
+    main_image = TextAreaField('Изображение')
     is_verified = BooleanField('Проверено')
 
 class VolunteerForm(FlaskForm):

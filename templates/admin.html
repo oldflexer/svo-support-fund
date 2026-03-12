@@ -922,7 +922,7 @@
                 </div>
 
                 <!-- Модальное окно сбора -->
-                <div v-if="showDriveModal" class="modal-overlay" @click="showDriveModal = false">
+                <div v-if="showDriveModal" class="modal-overlay">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
                             <h3>
@@ -995,7 +995,7 @@
                 </div>
 
                 <!-- Модальное окно новости -->
-                <div v-if="showNewsModal" class="modal-overlay" @click="showNewsModal = false">
+                <div v-if="showNewsModal" class="modal-overlay">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
                             <h3>
@@ -1029,11 +1029,6 @@
                                             <option value="отчёт">Отчёт</option>
                                             <option value="история">История</option>
                                         </select>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Регион</label>
-                                        <input type="text" v-model="newsForm.region" placeholder="Например: Москва">
                                     </div>
                                     
                                     <div class="form-group full-width">
@@ -1085,7 +1080,7 @@
                 </div>
                 
                 <!-- Модальное окно нового пользователя -->
-                <div v-if="showUserModal" class="modal-overlay" @click="showUserModal = false">
+                <div v-if="showUserModal" class="modal-overlay">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
                             <h3><i class="fas fa-user-plus"></i> Добавить администратора</h3>
@@ -1144,7 +1139,7 @@
                 </div>
 
                 <!-- Модальное окно редактирования пользователя -->
-                <div v-if="editUserModal" class="modal-overlay" @click="editUserModal = false">
+                <div v-if="editUserModal" class="modal-overlay">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
                             <h3><i class="fas fa-user-plus"></i> Редактировать пользователя</h3>
@@ -1209,7 +1204,7 @@
         </div>
 
         <!-- Модальное окно 2FA -->
-            <div v-if="twoFactorModal" class="modal-overlay" @click="twoFactorModal = false">
+            <div v-if="twoFactorModal" class="modal-overlay">
                 <div class="modal-content modal-lg" @click.stop>
                     <div class="modal-header">
                         <h3>

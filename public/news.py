@@ -1,6 +1,6 @@
 
 from flask import jsonify, request
-from models import NewsArticle
+from models import db, NewsArticle
 from . import public_bp
 
 # -------------------------------
@@ -31,4 +31,20 @@ def get_news():
     
     return jsonify({
         'items': news
+    }), 200
+
+@public_bp.route('/news/<slug>', methods=['GET'])
+def get_news_detail(slug):
+    article = NewsArticle.query.filter_by(slug=slug).first_or_404()
+    return jsonify({
+        'id': article.id,
+        'title': article.title,
+        'content': article.content,
+        'excerpt': article.excerpt,
+        'category': article.category,
+        'main_image': article.main_image,
+        'is_verified': article.is_verified,
+        'views_count': article.views_count,
+        'read_time': article.read_time,
+        'published_at': article.published_at.isoformat() + 'Z' if article.published_at else None
     }), 200
