@@ -11,7 +11,7 @@ const app = createApp({
 
         // Drives
         const drives = ref({ items: [] });
-        const drivesFilter = ref('');
+        const drivesFilter = ref('активен');
 
         // News
         const news = ref({ items: [] });
@@ -216,6 +216,7 @@ const app = createApp({
 
         const setDrivesFilter = (filter) => {
             drivesFilter.value = filter;
+            fetchDrives();
         };
 
         const getCategoryName = (cat) => {

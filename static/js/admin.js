@@ -51,7 +51,18 @@ const app = createApp({
         });
         const driveLoading = ref(false);
         const driveError = ref('');
-        const needsText = ref('');
+
+        const needsText = computed({
+            get: () => {
+                if (Array.isArray(driveForm.needs)) {
+                    return driveForm.needs.join('\n');
+                }
+                return '';
+            },
+            set: (value) => {
+                driveForm.needs = value.split('\n').filter(line => line.trim() !== '');
+            }
+        });
 
         // News
         const news = ref({ items: [], total: 0, page: 1, pages: 1});
@@ -568,16 +579,6 @@ const app = createApp({
             loadDrives(1);
         });
 
-        watch(() => driveForm.needs, (newNeeds) => {
-            if (Array.isArray(newNeeds)) {
-                needsText.value = newNeeds.join('\n');
-            }
-        }, { immediate: true });
-
-        const updateNeedsFromText = () => {
-            driveForm.needs = needsText.value.split('\n').filter(line => line.trim() !== '');
-        };
-
         const loadNews = async (page = 1) => {
             try {
                 let url = `/api/admin/news?page=${page}`;
@@ -699,7 +700,7 @@ const app = createApp({
             const formData = new FormData();
             formData.append('file', file);
             try {
-                const response = await apiFetch('/api/admin/upload?subfolder=news', {
+                const response = await apiFetch('/api/admin/uploads?subfolder=news', {
                     method: 'POST',
                     body: formData
                 });
@@ -1343,7 +1344,6 @@ const app = createApp({
             deleteDrive,
             prevDrivesPage,
             nextDrivesPage,
-            updateNeedsFromText,
 
             openAddNewsModal,
             editNews,
