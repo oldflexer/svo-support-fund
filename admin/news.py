@@ -103,7 +103,7 @@ def update_news(id):
             setattr(article, field, data[field])
     db.session.commit()
 
-    log_action(get_jwt_identity(), 'update_news', f'Новость {article.id} обновлена {data}', request.remote_addr)
+    log_action(get_jwt_identity(), 'update_news', f'Новость {article.id} обновлена', request.remote_addr)
 
     return jsonify({'message': 'Новость обновлена'}), 200
 

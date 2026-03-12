@@ -190,6 +190,7 @@ body {
 }
 
 .btn-secondary {
+    border-radius: var(--border-radius);
     background: transparent;
     border: 2px solid white;
     color: white;

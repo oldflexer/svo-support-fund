@@ -148,9 +148,15 @@
                             <div class="stat-content">
                                 <h3>${ formatCurrency(dashboardData?.donations.total_amount || 0) }</h3>
                                 <p>Всего собрано</p>
-                                <div class="stat-trend">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>+${ formatPercent(dashboardData?.donations.change || 0) } за неделю</span>
+                                <div class="stat-trend" 
+                                    :class="{ 'trend-positive': (dashboardData?.donations.change || 0) > 0, 
+                                                'trend-negative': (dashboardData?.donations.change || 0) < 0 }">
+                                    <i class="fas" :class="(dashboardData?.donations.change || 0) > 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+                                    <span>
+                                        ${ (dashboardData?.donations.change || 0) > 0 ? '+' : '' }
+                                        ${ formatPercent(dashboardData?.donations.change || 0) }
+                                        за неделю
+                                    </span>
                                 </div>
                             </div>
                         </div>

@@ -540,7 +540,11 @@
     color: var(--admin-success);
 }
 
-.stat-trend.down {
+.stat-trend.trend-positive {
+    color: var(--admin-success);
+}
+
+.stat-trend.trend-negative {
     color: var(--admin-danger);
 }
 
