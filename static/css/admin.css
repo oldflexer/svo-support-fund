@@ -1,4 +1,4 @@
-/* Стили для админ панели */
+/* admin.html styles */
 
 :root {
     --admin-primary: #1a365d;
@@ -18,6 +18,7 @@
     --border-radius: 8px;
 }
 
+/* Stats section (used in statistics tab) */
 .stats-section {
     background: #f9fafb;
     border-radius: 8px;
@@ -45,7 +46,50 @@
     gap: 1rem;
 }
 
-/* Страница логина */
+.top-news-list {
+    margin-top: 1rem;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+.top-news-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.top-news-item:last-child {
+    border-bottom: none;
+}
+
+.top-news-item .rank {
+    width: 2rem;
+    height: 2rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+}
+
+.top-news-item .title {
+    flex: 1;
+    font-weight: 500;
+}
+
+.top-news-item .views {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+/* Login page */
 .login-container {
     min-height: 100vh;
     display: flex;
@@ -123,14 +167,14 @@
     color: var(--admin-dark);
 }
 
-/* Основной контейнер админки */
+/* Main admin container */
 .admin-container {
     display: flex;
     min-height: 100vh;
     background: var(--admin-light);
 }
 
-/* Боковая панель */
+/* Sidebar */
 .sidebar {
     width: var(--sidebar-width);
     background: white;
@@ -270,7 +314,7 @@
     color: white;
 }
 
-/* Основной контент */
+/* Main content */
 .admin-content {
     flex: 1;
     overflow-y: auto;
@@ -335,7 +379,7 @@
     color: var(--admin-accent);
 }
 
-/* Контент вкладок */
+/* Tabs */
 .tab-content {
     padding: 1.5rem;
 }
@@ -376,7 +420,7 @@
     color: var(--admin-dark);
 }
 
-/* Фильтры */
+/* Filters row */
 .filters-row {
     display: flex;
     gap: 0.5rem;
@@ -405,7 +449,7 @@
     color: white;
 }
 
-/* Дашборд */
+/* Dashboard */
 .dashboard-grid {
     display: grid;
     grid-template-rows: 1fr 4fr;
@@ -415,11 +459,11 @@
 }
 
 .first-row-item {
-  grid-column: span 2;
+    grid-column: span 2;
 }
 
 .second-row-item {
-  grid-column: span 3;
+    grid-column: span 3;
 }
 
 .stat-card {
@@ -465,63 +509,6 @@
     color: #111827;
 }
 
-.top-news-list {
-    margin-top: 1rem;
-    background: white;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-}
-
-.top-news-item {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.top-news-item:last-child {
-    border-bottom: none;
-}
-
-.top-news-item .rank {
-    width: 2rem;
-    height: 2rem;
-    background: #3b82f6;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    margin-right: 1rem;
-    font-size: 0.9rem;
-}
-
-.top-news-item .title {
-    flex: 1;
-    font-weight: 500;
-}
-
-.top-news-item .views {
-    color: #6b7280;
-    font-size: 0.9rem;
-}
-
-.news-thumbnail {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.news-thumbnail img {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 4px;
-}
-
 .stat-icon {
     width: 60px;
     height: 60px;
@@ -562,21 +549,19 @@
     color: var(--admin-danger);
 }
 
+/* Chart & recent cards */
+.chart-card,
 .recent-card {
-    min-height: 0;
-}
-
-.chart-card, .recent-card {
     background: white;
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.chart-card h3, .recent-card h3 {
+.chart-card h3,
+.recent-card h3 {
     color: var(--admin-dark);
     margin-bottom: 1rem;
-    /* display: flex; */
     align-items: center;
     gap: 0.5rem;
 }
@@ -634,7 +619,7 @@
     color: var(--admin-gray);
 }
 
-/* Таблицы */
+/* Tables */
 .table-container {
     background: white;
     border-radius: 8px;
@@ -672,7 +657,7 @@
     background: #f7fafc;
 }
 
-/* Статусные бейджи */
+/* Status badges */
 .status-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
@@ -681,22 +666,28 @@
     font-weight: 600;
 }
 
-.status-badge.ожидает, .новый, .неактивен, .приостановлен {
+.status-badge.ожидает,
+.новый,
+.неактивен,
+.приостановлен {
     background: #fef3c7;
     color: #92400e;
 }
 
-.status-badge.обработано, .связались {
+.status-badge.обработано,
+.связались {
     background: #d1fae5;
     color: #065f46;
 }
 
-.status-badge.отправлено, .активен {
+.status-badge.отправлено,
+.активен {
     background: #dbeafe;
     color: #1e40af;
 }
 
-.status-badge.архив, .завершен {
+.status-badge.архив,
+.завершен {
     background: var(--admin-gray);
     color: var(--primary-dark);
 }
@@ -724,7 +715,7 @@
     color: #065f46;
 }
 
-/* Кнопки действий */
+/* Action buttons */
 .action-buttons {
     display: flex;
     gap: 0.5rem;
@@ -796,7 +787,7 @@
     cursor: not-allowed;
 }
 
-/* Пагинация */
+/* Pagination */
 .pagination {
     display: flex;
     justify-content: center;
@@ -833,7 +824,7 @@
     font-size: 0.9rem;
 }
 
-/* Алерты */
+/* Alerts */
 .alert {
     padding: 1rem;
     border-radius: 6px;
@@ -849,13 +840,7 @@
     border: 1px solid #feb2b2;
 }
 
-.modal-actions {
-    display: flex;
-    justify-content: space-between;
-    gap: 2rem;
-}
-
-/* Уведомления */
+/* Notifications */
 .notification {
     position: fixed;
     top: 100px;
@@ -904,7 +889,7 @@
     margin-left: auto;
 }
 
-/* Вспомогательные классы */
+/* Utility classes */
 .text-success {
     color: var(--admin-success);
 }
@@ -921,6 +906,10 @@
     color: var(--admin-gray);
 }
 
+.text-center {
+    text-align: center;
+}
+
 .amount-cell {
     font-weight: 600;
     color: var(--admin-success);
@@ -932,29 +921,36 @@
     font-size: 0.85rem;
     font-weight: 500;
 }
+
 .category-badge.новости {
     background: #dbeafe;
     color: #1e40af;
 }
+
 .category-badge.отчёт {
     background: #fef3c7;
     color: #92400e;
 }
+
 .category-badge.история {
     background: #e0f2fe;
     color: #0369a1;
 }
+
+/* Image upload */
 .image-upload {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
+
 .image-preview {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-top: 0.5rem;
 }
+
 .image-preview img {
     max-width: 200px;
     max-height: 100px;
@@ -962,18 +958,48 @@
     border: 1px solid #e5e7eb;
 }
 
+.image-upload input[type="file"] {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: var(--admin-light);
+    border: 1px solid var(--admin-border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #374151;
+    cursor: pointer;
+}
+
+.image-upload input[type="file"]::file-selector-button {
+    background-color: var(--admin-accent);
+    color: var(--admin-light);
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    margin-right: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.image-upload input[type="file"]::file-selector-button:hover {
+    background-color: var(--admin-secondary);
+}
+
+/* Input with button */
 .input-with-button {
     display: flex;
     gap: 0.5rem;
 }
+
 .input-with-button input {
     flex: 1;
 }
+
 .btn-small {
     padding: 0.25rem 0.5rem;
     font-size: 0.875rem;
 }
 
+/* Settings */
 .settings-grid {
     max-width: 800px;
     margin: 0 auto;
@@ -1043,8 +1069,7 @@
     width: auto;
 }
 
-/* Стили для модальных окон 2FA */
-
+/* 2FA modal styles (from style.css) */
 .two-factor-setup,
 .two-factor-verify,
 .two-factor-login,
@@ -1213,7 +1238,6 @@
     margin-top: 2rem;
 }
 
-/* Шаг подтверждения */
 .verify-instructions {
     margin-bottom: 1.5rem;
 }
@@ -1286,7 +1310,6 @@
     margin-top: 1.5rem;
 }
 
-/* Шаг логина (verify при входе) */
 .two-factor-login .login-verify {
     max-width: 400px;
     margin: 0 auto;
@@ -1342,7 +1365,6 @@
     margin-bottom: 0.25rem;
 }
 
-/* Шаг отключения */
 .disable-warning {
     text-align: center;
     margin-bottom: 2rem;
@@ -1399,7 +1421,6 @@
     font-size: 0.9rem;
 }
 
-/* Резервные коды */
 .backup-codes-section {
     margin-top: 1.5rem;
 }
@@ -1450,64 +1471,162 @@
     gap: 0.75rem;
 }
 
-.image-upload input[type="file"] {
-    width: 100%;
-    padding: 0.5rem;
-    background-color: var(--admin-light);
-    border: 1px solid var(--admin-border);
-    border-radius: 6px;
-    font-size: 0.9rem;
-    color: #374151;
-    cursor: pointer;
-}
-
-.image-upload input[type="file"]::file-selector-button {
-    background-color: var(--admin-accent);
-    color: var(--admin-light);
-    padding: 0.5rem 1rem;
+/* General button styles (from style.css) */
+.btn-primary {
+    background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+    color: white;
     border: none;
-    border-radius: 4px;
-    margin-right: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.image-upload input[type="file"]::file-selector-button:hover {
-    background-color: var(--admin-secondary);
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(230, 57, 70, 0.3);
 }
 
-/* Адаптация для маленьких экранов */
-@media (max-width: 640px) {
-    .qr-code-section {
-        flex-direction: column;
-        align-items: center;
+.btn-secondary {
+    border-radius: var(--border-radius);
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: white;
+    color: var(--primary);
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Modal styles (from style.css) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
     }
-    
-    .qr-container {
-        flex: none;
-    }
-    
-    .apps-grid {
-        flex-direction: column;
-    }
-    
-    .app-link {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .verify-actions,
-    .disable-actions,
-    .backup-actions {
-        flex-direction: column;
-    }
-    
-    .backup-actions button {
-        width: 100%;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* Адаптивность */
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--light-gray);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--light-gray);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.modal-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+/* Form grid (used in modals) */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Loading spinner */
+.loading-spinner {
+    text-align: center;
+    padding: 2rem;
+    color: var(--admin-gray);
+    font-size: 1rem;
+}
+
+.loading-spinner::before {
+    content: '';
+    display: inline-block;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid var(--admin-border);
+    border-top-color: var(--admin-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
     .sidebar {
         width: 70px;
