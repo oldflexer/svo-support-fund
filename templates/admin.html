@@ -531,7 +531,10 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
+                                    <th>Изображение</th>
                                     <th>Заголовок</th>
+                                    <th>slug</th>
+                                    <th>excerpt</th>
                                     <th>Категория</th>
                                     <th>Верифицировано</th>
                                     <th>Просмотры</th>
@@ -542,7 +545,14 @@
                             <tbody>
                                 <tr v-for="item in news" :key="item.id">
                                     <td>${ item.id }</td>
+                                    <td>
+                                        <div class="news-thumbnail">
+                                            <img v-if="item.main_image" :src="item.main_image" alt="">
+                                        </div>
+                                    </td>
                                     <td>${ item.title }</td>
+                                    <td>${ item.slug }</td>
+                                    <td>${ item.excerpt }</td>
                                     <td>
                                         <span class="category-badge" :class="item.category">
                                             ${ item.category === 'новости' ? 'Новость' : (item.category === 'отчёт' ? 'Отчёт' : 'История') }
@@ -567,7 +577,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="news.length === 0">
-                                    <td colspan="7" class="text-center">Нет записей</td>
+                                    <td colspan="8" class="text-center">Нет записей</td>
                                 </tr>
                             </tbody>
                         </table>

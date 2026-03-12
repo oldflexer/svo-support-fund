@@ -508,6 +508,20 @@
     font-size: 0.9rem;
 }
 
+.news-thumbnail {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.news-thumbnail img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 4px;
+}
+
 .stat-icon {
     width: 60px;
     height: 60px;

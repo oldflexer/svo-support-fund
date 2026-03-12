@@ -9,14 +9,19 @@ from . import public_bp
 
 @public_bp.route('/news', methods=['GET'])
 def get_news():
-    category = request.args.get('category', None)
+    """
+    Public endpoint to retrieve news articles.
+    Returns only verified articles (is_verified=True).
+    Optional query parameter 'category' to filter by category.
+    """
+    category = request.args.get('category')
 
-    query = NewsArticle.query
+    query = NewsArticle.query.filter_by(is_verified=True)
     if category:
         query = query.filter_by(category=category)
-    
-    query = query.order_by(NewsArticle.published_at.desc()).all()
-    news = [{
+
+    articles = query.order_by(NewsArticle.published_at.desc()).all()
+    news_list = [{
         'id': a.id,
         'title': a.title,
         'slug': a.slug,
@@ -27,11 +32,9 @@ def get_news():
         'views_count': a.views_count,
         'read_time': a.read_time,
         'published_at': a.published_at.isoformat() + 'Z' if a.published_at else None
-    } for a in query]
-    
-    return jsonify({
-        'items': news
-    }), 200
+    } for a in articles]
+
+    return jsonify({'items': news_list}), 200
 
 @public_bp.route('/news/<slug>', methods=['GET'])
 def get_news_detail(slug):
