@@ -101,6 +101,15 @@ const app = createApp({
             }
         };
 
+        const categoryPlaceholder = (category) => {
+            const placeholders = {
+                'новости': '../static/img/news.png',
+                'отчёт': '../static/img/reports.png',
+                'история': '../static/img/tales.png'
+            };
+            return placeholders[category] || '../static/img/news.png'; // запасной вариант
+        };
+
         function formatDate(isoString) {
             if (!isoString) return '';
             const date = new Date(isoString);
@@ -272,6 +281,7 @@ const app = createApp({
             volunteerLoading,
             showDonationModal,
             notification,
+            categoryPlaceholder,
             setDrivesFilter,
             scrollTo,
             submitDonation,

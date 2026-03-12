@@ -181,7 +181,7 @@
                 <div class="news-grid">
                     <!-- Главная новость (featured) -->
                     <div v-if="featuredArticle" class="featured-article" @click="viewArticle(featuredArticle.slug)">
-                        <div class="featured-image" :style="{backgroundImage: `url(${featuredArticle.main_image || 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w=800'})`}">
+                        <div class="featured-image" :style="{backgroundImage: `url(${featuredArticle.main_image || categoryPlaceholder(featuredArticle.category)})`}">
                             <div class="featured-overlay">
                                 <div class="featured-category">${ getCategoryName(featuredArticle.category) }</div>
                                 <div v-if="featuredArticle.is_verified" class="featured-verified">
@@ -208,7 +208,7 @@
                     
                     <!-- Остальные новости -->
                     <div v-for="article in filteredNews" :key="article.id" class="news-card" @click="viewArticle(article.slug)">
-                        <div class="news-image" :style="{backgroundImage: `url(${article.main_image || 'https://images.unsplash.com/photo-1589652717521-10c0d092dea9?w-400'})`}">
+                        <div class="news-image" :style="{backgroundImage: `url(${article.main_image || categoryPlaceholder(article.category)})`}">
                             <div class="news-category">${ getCategoryName(article.category) }</div>
                         </div>
                         <div class="news-content">
@@ -320,8 +320,12 @@
                 </h2>
                 <div class="about-content">
                     <div class="about-text">
-                        <h3>Фонд "Защитим Родину"</h3>
-                        <p>Мы - группа волонтёров и неравнодушных граждан, объединившихся для поддержки участников Специальной Военной Операции.</p>
+                        <h3>Фонд поддержки и развития социально значимых проектов "Защитим Родину"</h3>
+                        <p>Мы - группа неравнодушных граждан и волонтёров, объединившихся для достижения социально значимых целей:</p>
+                        <p> - Содействие патриотическому, духовно-нравственному воспитанию граждан</p>
+                        <p> - Поддержка воспитания патриотизма, формирование у подрастающего поколения чувства верности Родине</p>
+                        <p> - Оказание правовой помощи участникам боевых действий, ветеранам боевых действий и членам их семей</p>
+                        <p> - Сбор средств для закупки необходимого оборудования и иного имущества для участников боевых действий</p>
                         
                         <h4>Наши принципы:</h4>
                         <ul>
@@ -332,37 +336,21 @@
                         </ul>
                     </div>
                     
-                    <div class="about-stats">
-                        <h4>Наша статистика за 2026 год:</h4>
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-box"></i>
-                                </div>
-                                <div class="stat-number">>50</div>
-                                <div class="stat-label">Видов помощи отправлено</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-ambulance"></i>
-                                </div>
-                                <div class="stat-number">29</div>
-                                <div class="stat-label">Медицинских комплектов</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-car"></i>
-                                </div>
-                                <div class="stat-number">8</div>
-                                <div class="stat-label">Единиц техники</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">
-                                    <i class="fas fa-people-group"></i>
-                                </div>
-                                <div class="stat-number">12</div>
-                                <div class="stat-label">Семьям оказана помощь</div>
-                            </div>
+                    <div class="docs-section">
+                        <h4>Учредительные документы:</h4>
+                        <div class="docs-grid">
+                            <a href="../static/docs/ogrn.pdf" target="_blank" class="doc-card">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>ОГРН</span>
+                            </a>
+                            <a href="../static/docs/svidetelstvo.pdf" target="_blank" class="doc-card">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Свидетельство</span>
+                            </a>
+                            <a href="../static/docs/ustav.pdf" target="_blank" class="doc-card">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Устав</span>
+                            </a>
                         </div>
                     </div>
                 </div>
