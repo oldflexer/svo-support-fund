@@ -700,7 +700,7 @@ const app = createApp({
             const formData = new FormData();
             formData.append('file', file);
             try {
-                const response = await apiFetch('/api/admin/uploads?subfolder=news', {
+                const response = await apiFetch('/api/admin/upload?subfolder=news', {
                     method: 'POST',
                     body: formData
                 });

@@ -2,6 +2,7 @@ __pycache__/
 .memory/
 .venv/
 .vscode/
+static/uploads/news/*
 *.db
 *.pdf
 *.code-workspace
