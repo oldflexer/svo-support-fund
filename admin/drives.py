@@ -127,7 +127,7 @@ def update_drive(id):
 
     db.session.commit()
 
-    log_action(get_jwt_identity(), 'update_donation', f'Сбор {drive.id} обновлен {data.keys}', request.remote_addr)
+    log_action(get_jwt_identity(), 'update_donation', f'Сбор {drive.id} обновлен', request.remote_addr)
 
     return jsonify({'message': 'Сбор обновлен'}), 200
 
