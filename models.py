@@ -13,8 +13,8 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     full_name = db.Column(db.String(120))
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='moderator')  # admin, moderator
-    is_active = db.Column(db.Boolean, default=True)
+    role = db.Column(db.String(20), nullable=False, default='moderator', index=True)  # admin, moderator
+    is_active = db.Column(db.Boolean, default=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     last_login = db.Column(db.DateTime)
     
@@ -43,9 +43,8 @@ class Donation(db.Model):
     amount = db.Column(db.Integer, nullable=False)  # in rubles
     message = db.Column(db.Text)
     is_anonymous = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(20), default='ожидает')  # ожидает, обработано, отправлено
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
-    # Optional link to a specific drive
+    status = db.Column(db.String(20), default='ожидает', index=True)  # ожидает, обработано, отправлено
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)
     drive_id = db.Column(db.Integer, db.ForeignKey('drives.id'), nullable=True)
 
 class Drive(db.Model):
@@ -55,10 +54,10 @@ class Drive(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     needs = db.Column(db.Text)  # JSON list
-    status = db.Column(db.String(20), default='активен')  # активен, завершен, приостановлен
+    status = db.Column(db.String(20), default='активен', index=True)  # активен, завершен, приостановлен
     collected = db.Column(db.Integer, default=0)
     needed = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)
     
     @property
     def progress_percentage(self):
@@ -82,11 +81,11 @@ class NewsArticle(db.Model):
     slug = db.Column(db.String(200), unique=True, nullable=False, index=True)
     excerpt = db.Column(db.Text)
     content = db.Column(db.Text)
-    category = db.Column(db.String(50), default='новости')  # новости, отчёт, история
+    category = db.Column(db.String(50), default='новости', index=True)  # новости, отчёт, история
     main_image = db.Column(db.String(500))
-    is_verified = db.Column(db.Boolean, default=False)
+    is_verified = db.Column(db.Boolean, default=False, index=True)
     views_count = db.Column(db.Integer, default=0)
-    published_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    published_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
     
     @property
@@ -105,8 +104,8 @@ class Volunteer(db.Model):
     city = db.Column(db.String(100))
     skills = db.Column(db.Text)
     can_deliver = db.Column(db.Boolean, default=False)
-    status = db.Column(db.String(20), default='новый')  # новый, связались, активен, архив
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    status = db.Column(db.String(20), default='новый', index=True)  # новый, связались, активен, архив
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)
 
 class Setting(db.Model):
     __tablename__ = 'settings'
@@ -119,9 +118,9 @@ class AuditLog(db.Model):
     __tablename__ = 'audit_logs'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
     username = db.Column(db.String(64))
     action = db.Column(db.String(200))
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None), index=True)
