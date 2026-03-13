@@ -666,20 +666,6 @@ body {
     color: var(--gray);
 }
 
-.news-tags {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.tag {
-    background: var(--light-gray);
-    color: var(--primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 50px;
-    font-size: 0.75rem;
-}
-
 .news-load-more {
     text-align: center;
     margin-top: 3rem;
