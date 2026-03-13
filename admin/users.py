@@ -74,9 +74,16 @@ def create_user():
 @jwt_required()
 @role_required('admin')
 def update_user(id):
+    current_user_id = get_jwt_identity()
     user = User.query.get_or_404(id)
     data = request.get_json() or {}
     
+    if user.id == current_user_id:
+        if 'role' in data and data['role'] != user.role:
+            return jsonify({'error': 'Нельзя изменить свою собственную роль'}), 400
+        if 'is_active' in data and data['is_active'] != user.is_active:
+            return jsonify({'error': 'Нельзя деактивировать самого себя'}), 400
+        
     # Update fields
     if 'username' in data and data['username'] != user.username:
         if User.query.filter_by(username=data['username']).first():
