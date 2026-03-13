@@ -95,9 +95,6 @@ def update_user(id):
             return jsonify({'error': 'Email уже занят'}), 400
         user.email = data['email']
 
-    if 'email' in data:
-        user.email = data['email']
-
     if 'full_name' in data:
         user.full_name = data['full_name']
 
