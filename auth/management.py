@@ -13,8 +13,7 @@ import json
 import io
 import base64
 import secrets
-from datetime import datetime
-
+from datetime import datetime, UTC
 import pyotp
 import qrcode
 from flask import request, jsonify
@@ -75,7 +74,7 @@ def verify_2fa():
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
     
-    user.last_login = datetime.utcnow()
+    user.last_login = datetime.now(UTC).replace(tzinfo=None)
     db.session.commit()
     
     log_action(user.id, 'login_2fa', 'Успешный вход с 2FA', request.remote_addr)

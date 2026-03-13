@@ -6,7 +6,7 @@ for the admin dashboard, including donation totals, trends, recent donations, an
 Requires authentication and admin/moderator role.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, UTC
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 from models import db, Donation, Volunteer
@@ -33,7 +33,7 @@ def get_dashboard():
     sum_donations = db.session.query(db.func.sum(Donation.amount)).scalar() or 0
 
     # Date definition for future calculations
-    datetime_now = datetime.now(timezone.utc)
+    datetime_now = datetime.now(UTC).replace(tzinfo=None)
     datetime_week_ago = datetime_now - timedelta(days=7)
     datetime_two_weeks_ago = datetime_now - timedelta(days=14)
 

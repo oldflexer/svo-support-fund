@@ -53,7 +53,7 @@ def login():
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
     
-    user.last_login = datetime.now(UTC)
+    user.last_login = datetime.now(UTC).replace(tzinfo=None)
     db.session.commit()
     
     log_action(user.id, 'login', 'Успешный вход', request.remote_addr)
