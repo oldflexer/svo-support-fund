@@ -85,17 +85,16 @@ const app = createApp({
 
         const fetchNews = async () => {
             try {
-                let url = `/api/public/news`
+                let url = `/api/public/news`;
                 if (newsFilter.value) {
-                    url += `?status=${encodeURIComponent(newsFilter.value)}`;
+                    url += `?category=${encodeURIComponent(newsFilter.value)}`;
                 }
                 const response = await fetch(url);
                 const data = await response.json();
                 news.value = data;
-                if (data.length > 0) {
-                    featuredArticle.value = data[0];
+                if (data.items && data.items.length > 0) {
+                    featuredArticle.value = data.items[0];
                 }
-
             } catch (e) {
                 console.error('Failed to fetch news', e);
             }
