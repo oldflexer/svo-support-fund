@@ -49,28 +49,13 @@ def get_drives():
             'id': d.id,
             'title': d.title,
             'description': d.description,
-            'needs': d.needs_list,  # из свойства модели
+            'needs': d.needs_list,
             'status': d.status,
             'collected': d.collected,
             'needed': d.needed,
             'progress': d.progress_percentage,
             'created_at': d.created_at.isoformat() if d.created_at else None
         })
-
-    # result = [{
-    #     'id': d.id,
-    #     'title': d.title,
-    #     'description': d.description,
-    #     'needs': d.needs_list,
-    #     'urgency': d.urgency,
-    #     'status': d.status,
-    #     'progress': {
-    #         'collected': d.collected,
-    #         'needed': d.needed,
-    #         'percentage': d.progress_percentage
-    #     },
-    #     'created_at': d.created_at.isoformat()
-    # } for d in drives]
 
     return jsonify({
         'items': drives,
@@ -142,7 +127,7 @@ def update_drive(id):
 
     db.session.commit()
 
-    log_action(get_jwt_identity(), 'update_donation', f'Сбор {drive.id} обновлен {data}', request.remote_addr)
+    log_action(get_jwt_identity(), 'update_donation', f'Сбор {drive.id} обновлен {data.keys}', request.remote_addr)
 
     return jsonify({'message': 'Сбор обновлен'}), 200
 
