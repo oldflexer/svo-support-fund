@@ -113,7 +113,7 @@ const app = createApp({
             if (!isoString) return '';
             const date = new Date(isoString);
             if (isNaN(date.getTime())) return isoString;
-            
+
             const options = {
                 year: 'numeric',
                 month: 'long',

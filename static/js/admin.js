@@ -1119,11 +1119,27 @@ const app = createApp({
             return new Intl.NumberFormat('ru-RU', { style: 'percent', minimumFractionDigits: 0 }).format(value);
         };
 
-        const formatDate = (iso) => {
-            if (!iso) return '';
-            const d = new Date(iso);
-            return d.toLocaleString('ru-RU');
-        };
+        // const formatDate = (iso) => {
+        //     if (!iso) return '';
+        //     const d = new Date(iso);
+        //     return d.toLocaleString('ru-RU');
+        // };
+
+        function formatDate(isoString) {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            if (isNaN(date.getTime())) return isoString;
+
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Europe/Moscow'
+            };
+            return new Intl.DateTimeFormat('ru-RU', options).format(date);
+        }
 
         // 2FA methods
         const setupTwoFactor = async () => {
