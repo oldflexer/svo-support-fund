@@ -69,11 +69,11 @@ const app = createApp({
             }
         };
 
-        const fetchDrives = async () => {
+        const fetchDrives = async (page = 1) => {
             try {
-                let url = `/api/public/drives`
+                let url = `/api/public/drives?page=${page}&per_page=20`;
                 if (drivesFilter.value) {
-                    url += `?status=${encodeURIComponent(drivesFilter.value)}`;
+                    url += `&status=${encodeURIComponent(drivesFilter.value)}`;
                 }
                 const response = await fetch(url);
                 const data = await response.json();
@@ -83,11 +83,11 @@ const app = createApp({
             }
         };
 
-        const fetchNews = async () => {
+        const fetchNews = async (page = 1) => {
             try {
-                let url = `/api/public/news`;
+                let url = `/api/public/news?page=${page}&per_page=20`;
                 if (newsFilter.value) {
-                    url += `?category=${encodeURIComponent(newsFilter.value)}`;
+                    url += `&category=${encodeURIComponent(newsFilter.value)}`;
                 }
                 const response = await fetch(url);
                 const data = await response.json();
