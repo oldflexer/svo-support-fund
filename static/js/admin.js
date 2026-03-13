@@ -810,7 +810,7 @@ const app = createApp({
 
         const prevVolunteersPage = () => {
             if (volunteers.value.page > 1) {
-                loadVolunteers(donations.value.page - 1);
+                loadVolunteers(volunteers.value.page - 1);
             }
         };
 
