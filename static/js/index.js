@@ -227,24 +227,6 @@ const app = createApp({
             return map[cat] || cat;
         };
 
-        const getUrgencyText = (urgency) => {
-            const map = {
-                'высокая': 'Срочно!',
-                'средняя': 'Средняя',
-                'низкая': 'Низкая'
-            };
-            return map[urgency] || urgency;
-        };
-
-        const getUrgencyIcon = (urgency) => {
-            const map = {
-                'высокая': 'fas fa-exclamation-triangle',
-                'средняя': 'fas fa-clock',
-                'низкая': 'fas fa-check'
-            };
-            return map[urgency] || 'fas fa-info';
-        };
-
         const formatCurrency = (value) => {
             return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(value);
         };
@@ -290,8 +272,6 @@ const app = createApp({
             viewArticle,
             setNewsFilter,
             getCategoryName,
-            getUrgencyText,
-            getUrgencyIcon,
             formatCurrency,
             formatDate
         };
