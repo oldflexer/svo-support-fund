@@ -4,5 +4,6 @@ __pycache__/
 .vscode/
 static/uploads/news/*
 *.db
+*.sqlite
 *.pdf
 *.code-workspace

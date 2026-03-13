@@ -3,6 +3,7 @@ import os
 from flask import Flask, render_template, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
 
 from config import config
 from models import db, User
@@ -18,17 +19,18 @@ from auth import auth_bp
 app = Flask(__name__, static_folder='static', template_folder='templates')
 env = os.environ.get('FLASK_ENV', 'default')
 app.config.from_object(config[env])
+db.init_app(app)
 
 # Initialize extensions
 CORS(app)
-db.init_app(app)
 jwt = JWTManager(app)
+migrate = Migrate(app, db)
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Initialize database
 with app.app_context():
-    # Initialize database
     db.create_all()
 
     # Create admin if not exists
