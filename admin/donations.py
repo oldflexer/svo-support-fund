@@ -73,7 +73,7 @@ def update_donation(id):
         donation.status = data['status']
         db.session.commit()
 
-        log_action(get_jwt_identity(), 'update_donation', f'Пожертвование {donation.id} обновлено {data['status']}', request.remote_addr)
+        log_action(get_jwt_identity(), 'update_donation', f"Пожертвование {donation.id} обновлено {data['status']}", request.remote_addr)
 
         return jsonify({'message': 'Статус обновлен'}), 200
     return jsonify({'error': 'Поле status не найдено'}), 400
