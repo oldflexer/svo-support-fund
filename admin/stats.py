@@ -8,6 +8,7 @@ Requires authentication and admin/moderator role.
 
 from flask import jsonify
 from flask_jwt_extended import jwt_required
+from sqlalchemy import func, case
 from models import db, Donation, Drive, NewsArticle, Volunteer
 from utils import role_required
 from . import admin_bp
@@ -29,79 +30,106 @@ def get_stats():
         - volunteers: total, new, in touch, active, archive
     Requires authentication and admin/moderator role.
     """
+
     # Donations
-    count_donations = Donation.query.count()
-    count_new_donations = Donation.query.filter_by(status='ожидает').count()
-    count_processed_donations = Donation.query.filter_by(status='обработано').count()
-    count_sent_donations = Donation.query.filter_by(status='отправлено').count()
-    min_donation = db.session.query(db.func.min(Donation.amount)).scalar() or 0
-    max_donation = db.session.query(db.func.max(Donation.amount)).scalar() or 0
-    sum_donation = db.session.query(db.func.sum(Donation.amount)).scalar() or 0
-    avg_donation = db.session.query(db.func.avg(Donation.amount)).scalar() or 0
+    donation_agg = db.session.query(
+        func.coalesce(func.count(Donation.id), 0).label('count'),
+        func.coalesce(func.min(Donation.amount), 0).label('min'),
+        func.coalesce(func.max(Donation.amount), 0).label('max'),
+        func.coalesce(func.sum(Donation.amount), 0).label('sum'),
+        func.coalesce(func.avg(Donation.amount), 0).label('avg')
+    ).first()
+    donation_agg = donation_agg._asdict() if donation_agg else {
+        'count': 0, 'min': 0, 'max': 0, 'sum': 0, 'avg': 0
+    }
+
+    donation_status_counts = dict(
+        db.session.query(Donation.status, func.count(Donation.id))
+        .group_by(Donation.status).all()
+    )
 
     # Drives
-    count_drives = Drive.query.count()
-    count_active_drives = Drive.query.filter_by(status='активен').count()
-    count_completed_drives = Drive.query.filter_by(status='завершен').count()
-    count_suspended_drives = Drive.query.filter_by(status='приостановлен').count()
-    sum_collected_drives = db.session.query(db.func.sum(Drive.collected)).scalar() or 0
-    sum_needed_drives = db.session.query(db.func.sum(Drive.needed)).scalar() or 0
+    drive_agg = db.session.query(
+        func.coalesce(func.count(Drive.id), 0).label('count'),
+        func.coalesce(func.sum(Drive.collected), 0).label('sum_collected'),
+        func.coalesce(func.sum(Drive.needed), 0).label('sum_needed')
+    ).first()
+    drive_agg = drive_agg._asdict() if drive_agg else {
+        'count': 0, 'sum_collected': 0, 'sum_needed': 0
+    }
 
-    # News
-    count_news = NewsArticle.query.count()
-    count_verified_news = NewsArticle.query.filter_by(is_verified=True).count()
-    count_not_verified_news = NewsArticle.query.filter_by(is_verified=False).count()
-    count_category_news = NewsArticle.query.filter_by(category='новости', is_verified=True).count()
-    count_category_report = NewsArticle.query.filter_by(category='отчёт', is_verified=True).count()
-    count_category_story = NewsArticle.query.filter_by(category='история', is_verified=True).count()
-    
-    top_news = NewsArticle.query.filter_by(is_verified=True).order_by(NewsArticle.views_count.desc()).limit(3).all()
-    top_news = [{
-        'id': n.id,
-        'title': n.title,
-        'views_count': n.views_count
-    } for n in top_news]
+    drive_status_counts = dict(
+        db.session.query(Drive.status, func.count(Drive.id))
+        .group_by(Drive.status).all()
+    )
 
     # Volunteers
-    count_volunteers = Volunteer.query.count()
-    count_new_volunteers = Volunteer.query.filter_by(status='новый').count()
-    count_in_touch_volunteers = Volunteer.query.filter_by(status='связались').count()
-    count_active_volunteers = Volunteer.query.filter_by(status='активен').count()
-    count_archive_volunteers = Volunteer.query.filter_by(status='архив').count()
-    
+    volunteer_agg = db.session.query(
+        func.coalesce(func.count(Volunteer.id), 0).label('count')
+    ).first()
+    volunteer_agg = volunteer_agg._asdict() if volunteer_agg else {'count': 0}
+
+    volunteer_status_counts = dict(
+        db.session.query(Volunteer.status, func.count(Volunteer.id))
+        .group_by(Volunteer.status).all()
+    )
+
+    # News
+    news_agg = db.session.query(
+        func.coalesce(func.count(NewsArticle.id), 0).label('count'),
+        func.coalesce(func.sum(case((NewsArticle.is_verified == True, 1), else_=0)), 0).label('verified'),
+        func.coalesce(func.sum(case((NewsArticle.is_verified == False, 1), else_=0)), 0).label('unverified')
+    ).first()
+    news_agg = news_agg._asdict() if news_agg else {
+        'count': 0, 'verified': 0, 'unverified': 0
+    }
+
+    category_counts = dict(
+        db.session.query(NewsArticle.category, func.count(NewsArticle.id))
+        .filter(NewsArticle.is_verified == True)
+        .group_by(NewsArticle.category).all()
+    )
+
+    top_news = [
+        {'id': n.id, 'title': n.title, 'views_count': n.views_count}
+        for n in NewsArticle.query.filter_by(is_verified=True)
+        .order_by(NewsArticle.views_count.desc())
+        .limit(3).all()
+    ]
+
     return jsonify({
         'donations': {
-            'count_donations': count_donations,
-            'count_new_donations': count_new_donations,
-            'count_processed_donations': count_processed_donations,
-            'count_sent_donations': count_sent_donations,
-            'min_donation': min_donation,
-            'max_donation': max_donation,
-            'sum_donation': sum_donation,
-            'avg_donation': avg_donation
+            'count_donations': donation_agg['count'],
+            'count_new_donations': donation_status_counts.get('ожидает', 0),
+            'count_processed_donations': donation_status_counts.get('обработано', 0),
+            'count_sent_donations': donation_status_counts.get('отправлено', 0),
+            'min_donation': donation_agg['min'],
+            'max_donation': donation_agg['max'],
+            'sum_donation': donation_agg['sum'],
+            'avg_donation': donation_agg['avg'],
         },
         'drives': {
-            'count_drives': count_drives,
-            'count_active_drives': count_active_drives,
-            'count_completed_drives': count_completed_drives,
-            'count_suspended_drives': count_suspended_drives,
-            'sum_collected_drives': sum_collected_drives,
-            'sum_needed_drives': sum_needed_drives
+            'count_drives': drive_agg['count'],
+            'count_active_drives': drive_status_counts.get('активен', 0),
+            'count_completed_drives': drive_status_counts.get('завершен', 0),
+            'count_suspended_drives': drive_status_counts.get('приостановлен', 0),
+            'sum_collected_drives': drive_agg['sum_collected'],
+            'sum_needed_drives': drive_agg['sum_needed'],
         },
         'news': {
-            'count_news': count_news,
-            'count_verified_news': count_verified_news,
-            'count_not_verified_news': count_not_verified_news,
-            'count_category_news': count_category_news,
-            'count_category_report': count_category_report,
-            'count_category_story': count_category_story,
-            'top_news': top_news
+            'count_news': news_agg['count'],
+            'count_verified_news': news_agg['verified'],
+            'count_not_verified_news': news_agg['unverified'],
+            'count_category_news': category_counts.get('новости', 0),
+            'count_category_report': category_counts.get('отчёт', 0),
+            'count_category_story': category_counts.get('история', 0),
+            'top_news': top_news,
         },
         'volunteers': {
-            'count_volunteers': count_volunteers,
-            'count_new_volunteers': count_new_volunteers,
-            'count_in_touch_volunteers': count_in_touch_volunteers,
-            'count_active_volunteers': count_active_volunteers,
-            'count_archive_volunteers': count_archive_volunteers
+            'count_volunteers': volunteer_agg['count'],
+            'count_new_volunteers': volunteer_status_counts.get('новый', 0),
+            'count_in_touch_volunteers': volunteer_status_counts.get('связались', 0),
+            'count_active_volunteers': volunteer_status_counts.get('активен', 0),
+            'count_archive_volunteers': volunteer_status_counts.get('архив', 0),
         }
     }), 200

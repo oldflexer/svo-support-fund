@@ -9,6 +9,7 @@ Requires authentication and admin/moderator role.
 from datetime import datetime, timedelta, UTC
 from flask import jsonify
 from flask_jwt_extended import jwt_required
+from sqlalchemy import func, cast, Date
 from models import db, Donation, Volunteer
 from utils import role_required
 from . import admin_bp
@@ -53,15 +54,25 @@ def get_dashboard():
     count_volunteers = Volunteer.query.count()
 
     # For donations chart data (last 7 days)
+
+    daily_totals = db.session.query(
+        func.date(Donation.created_at).label('day'),
+        func.sum(Donation.amount).label('total')
+    ).filter(
+        Donation.created_at >= datetime_week_ago
+    ).group_by(
+        func.date(Donation.created_at)
+    ).all()
+
+    total_by_day = {row.day: row.total for row in daily_totals}
+
     chart_donations_dates = []
     chart_donations_amounts = []
     for i in range(6, -1, -1):
-        day = datetime_now - timedelta(days=i)
+        day = (datetime_now - timedelta(days=i)).date()
+        day_str = day.isoformat()
         chart_donations_dates.append(day.strftime('%d.%m'))
-        day_start = datetime.combine(day, datetime.min.time())
-        day_end = datetime.combine(day, datetime.max.time())
-        total = db.session.query(db.func.sum(Donation.amount)).filter(Donation.created_at.between(day_start, day_end)).scalar() or 0
-        chart_donations_amounts.append(total)
+        chart_donations_amounts.append(total_by_day.get(day_str, 0))
 
     # Recent donations
     recent_donations = Donation.query.order_by(Donation.created_at.desc()).limit(10).all()
