@@ -1163,7 +1163,6 @@ const app = createApp({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: twoFactorForm.token })
                 });
-                console.log(response)
                 if (response.ok) {
                     showNotification('2FA успешно включена');
                     twoFactorModal.value = false;
