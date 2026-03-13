@@ -143,6 +143,17 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Пагинация для сборов -->
+                <div v-if="drives.pages > 1" class="pagination">
+                    <button @click="prevDrivesPage" :disabled="drivesPage === 1" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="pagination-info">Страница ${ drivesPage } из ${ drivesTotalPages }</span>
+                    <button @click="nextDrivesPage" :disabled="drivesPage === drivesTotalPages" class="pagination-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
                 
                 <div v-if="filteredDrives.length === 0" class="no-drives">
                     <i class="fas fa-inbox"></i>
@@ -180,7 +191,7 @@
                 
                 <div class="news-grid">
                     <!-- Главная новость (featured) -->
-                    <div v-if="featuredArticle" class="featured-article" @click="viewArticle(featuredArticle.slug)">
+                    <div v-if="featuredArticle && (news.page === 1)" class="featured-article" @click="viewArticle(featuredArticle.slug)">
                         <div class="featured-image" :style="{backgroundImage: `url(${featuredArticle.main_image || categoryPlaceholder(featuredArticle.category)})`}">
                             <div class="featured-overlay">
                                 <div class="featured-category">${ getCategoryName(featuredArticle.category) }</div>
@@ -221,6 +232,17 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Пагинация для новостей -->
+                <div v-if="news.pages > 1" class="pagination">
+                    <button @click="prevNewsPage" :disabled="newsPage === 1" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="pagination-info">Страница ${ newsPage } из ${ newsTotalPages }</span>
+                    <button @click="nextNewsPage" :disabled="newsPage === newsTotalPages" class="pagination-btn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
 
                 <div v-if="filteredNews.length === 0" class="no-news">

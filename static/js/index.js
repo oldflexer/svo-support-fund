@@ -12,11 +12,17 @@ const app = createApp({
         // Drives
         const drives = ref({ items: [] });
         const drivesFilter = ref('активен');
-
+        const drivesPage = ref(1);
+        const drivesPerPage = ref(3);
+        const drivesTotalPages = ref(1);
+        
         // News
         const news = ref({ items: [] });
         const featuredArticle = ref(null);
         const newsFilter = ref('');
+        const newsPage = ref(1);
+        const newsPerPage = ref(4);
+        const newsTotalPages = ref(1);
         
         // Volunteer form
         const volunteerForm = reactive({
@@ -69,35 +75,77 @@ const app = createApp({
             }
         };
 
-        const fetchDrives = async (page = 1) => {
+        const fetchDrives = async (page = drivesPage.value) => {
             try {
-                let url = `/api/public/drives?page=${page}&per_page=20`;
+                let url = `/api/public/drives?page=${page}&per_page=${drivesPerPage.value}`;
                 if (drivesFilter.value) {
                     url += `&status=${encodeURIComponent(drivesFilter.value)}`;
                 }
                 const response = await fetch(url);
                 const data = await response.json();
                 drives.value = data;
+                drivesTotalPages.value = data.pages;
+                drivesPage.value = data.page;
             } catch (e) {
                 console.error('Failed to fetch drives', e);
             }
         };
 
-        const fetchNews = async (page = 1) => {
+        const prevDrivesPage = () => {
+            if (drivesPage.value > 1) {
+                fetchDrives(drivesPage.value - 1);
+            }
+        };
+
+        const nextDrivesPage = () => {
+            if (drivesPage.value < drivesTotalPages.value) {
+                fetchDrives(drivesPage.value + 1);
+            }
+        };
+
+        const setDrivesFilter = (filter) => {
+            drivesFilter.value = filter;
+            drivesPage.value = 1; // сбрасываем на первую страницу
+            fetchDrives(1);
+        };
+
+        const fetchNews = async (page = newsPage.value) => {
             try {
-                let url = `/api/public/news?page=${page}&per_page=20`;
+                let url = `/api/public/news?page=${page}&per_page=${newsPerPage.value}`;
                 if (newsFilter.value) {
                     url += `&category=${encodeURIComponent(newsFilter.value)}`;
                 }
                 const response = await fetch(url);
                 const data = await response.json();
                 news.value = data;
+                newsTotalPages.value = data.pages;
+                newsPage.value = data.page;
                 if (data.items && data.items.length > 0) {
                     featuredArticle.value = data.items[0];
+                } else {
+                    featuredArticle.value = null;
                 }
             } catch (e) {
                 console.error('Failed to fetch news', e);
             }
+        };
+
+        const prevNewsPage = () => {
+            if (newsPage.value > 1) {
+                fetchNews(newsPage.value - 1);
+            }
+        };
+
+        const nextNewsPage = () => {
+            if (newsPage.value < newsTotalPages.value) {
+                fetchNews(newsPage.value + 1);
+            }
+        };
+
+        const setNewsFilter = (filter) => {
+            newsFilter.value = filter;
+            newsPage.value = 1;
+            fetchNews(1);
         };
 
         const categoryPlaceholder = (category) => {
@@ -209,15 +257,6 @@ const app = createApp({
             window.location.href = `/news/${slug}`; // or open modal
         };
 
-        const setNewsFilter = (filter) => {
-            newsFilter.value = filter;
-        };
-
-        const setDrivesFilter = (filter) => {
-            drivesFilter.value = filter;
-            fetchDrives();
-        };
-
         const getCategoryName = (cat) => {
             const map = {
                 'новости': 'Новости',
@@ -244,34 +283,55 @@ const app = createApp({
         // Lifecycle
         onMounted(() => {
             fetchStats();
-            fetchDrives();
-            fetchNews();
+            fetchDrives(1);
+            fetchNews(1);
         });
 
         return {
             stats,
+
             drives,
             drivesFilter,
+            filteredDrives,
+            drivesPage,
+            drivesPerPage,
+            drivesTotalPages,
+
             news,
             featuredArticle,
             newsFilter,
             filteredNews,
-            filteredDrives,
-            donationForm,
-            donationLoading,
+            newsPage,
+            newsPerPage,
+            newsTotalPages,
+
             volunteerForm,
             volunteerLoading,
+            
+            donationForm,
+            donationLoading,
             showDonationModal,
+            
             notification,
-            categoryPlaceholder,
+            
+            prevDrivesPage,
+            nextDrivesPage,
             setDrivesFilter,
-            scrollTo,
-            submitDonation,
-            submitVolunteer,
-            showDonationForDrive,
-            viewArticle,
+
+            prevNewsPage,
+            nextNewsPage,
             setNewsFilter,
             getCategoryName,
+            categoryPlaceholder,
+            viewArticle,
+
+            submitVolunteer,
+
+            submitDonation,
+            showDonationForDrive,
+            
+            scrollTo,
+            
             formatCurrency,
             formatDate
         };
