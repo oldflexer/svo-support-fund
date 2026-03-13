@@ -51,7 +51,7 @@ def upload_image():
 
     is_valid, error_msg = is_allowed_image(file, file.filename)
     if not is_valid:
-        return jsonify({'error': error_msg}), 400
+        return jsonify({'error': 'Недопустимое содержимое файла'}), 400
 
     filename = secure_filename(file.filename)
     name, ext = os.path.splitext(filename)
