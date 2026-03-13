@@ -5,9 +5,11 @@ This module provides commonly used helpers:
 - role_required: decorator to restrict access based on user roles.
 - log_action: function to record user actions in the audit log.
 """
+import os
 from datetime import datetime
 from functools import wraps
-from flask import request, jsonify
+from PIL import Image
+from flask import current_app, request, jsonify
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from models import db, User, AuditLog, Setting
 
@@ -60,3 +62,31 @@ def update_setting(key, value):
         setting = Setting(key=key, value=value)
         db.session.add(setting)
     db.session.commit()
+
+def is_allowed_image(file_stream, filename):
+    allowed_extensions = current_app.config.get('ALLOWED_IMAGE_EXTENSIONS', set())
+    allowed_mime_types = current_app.config.get('ALLOWED_IMAGE_MIME_TYPES', set())
+
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in allowed_extensions:
+        return False, "Недопустимое расширение файла"
+
+    try:
+        file_stream.seek(0)
+        img = Image.open(file_stream)
+
+        if img.format is None:
+            return False, "Не удалось определить формат изображения"
+        
+        mime_type = Image.MIME.get(img.format, '')
+
+        if mime_type not in allowed_mime_types:
+            return False, "Недопустимый тип изображения"
+        
+    except Exception:
+        return False, "Файл не является изображением или повреждён"
+    
+    finally:
+        file_stream.seek(0)
+
+    return True, ""

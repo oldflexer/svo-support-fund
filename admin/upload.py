@@ -11,7 +11,7 @@ from datetime import datetime
 from flask import jsonify, request, url_for, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
-from utils import role_required, log_action
+from utils import role_required, log_action, is_allowed_image
 from . import admin_bp
 
 # -------------------------------
@@ -48,6 +48,10 @@ def upload_image():
         upload_path = current_app.config['UPLOAD_FOLDER']
 
     os.makedirs(upload_path, exist_ok=True)
+
+    is_valid, error_msg = is_allowed_image(file, file.filename)
+    if not is_valid:
+        return jsonify({'error': error_msg}), 400
 
     filename = secure_filename(file.filename)
     name, ext = os.path.splitext(filename)

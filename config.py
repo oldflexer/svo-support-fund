@@ -4,7 +4,10 @@ from datetime import timedelta
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
+    # Secrets
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+
+    # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'instance', 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -20,6 +23,10 @@ class Config:
     
     # Pagination
     ITEMS_PER_PAGE = 20
+
+    # File upload allowed types
+    ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+    ALLOWED_IMAGE_MIME_TYPES = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
 
 class DevelopmentConfig(Config):
     DEBUG = True
