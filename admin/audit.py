@@ -33,7 +33,7 @@ def get_audit_logs():
     user_id = request.args.get('user_id', type=int)
 
     query = AuditLog.query
-    if user_id:
+    if user_id is not None:
         query = query.filter_by(user_id=user_id)
 
     pagination = query.order_by(AuditLog.created_at.desc()).paginate(page=page, per_page=per_page)
