@@ -45,7 +45,7 @@ def get_audit_logs():
         'action': log.action,
         'details': log.details,
         'ip_address': log.ip_address,
-        'created_at': log.created_at.isoformat()
+        'created_at': log.created_at.isoformat() + 'Z'
     } for log in pagination.items]
 
     return jsonify({

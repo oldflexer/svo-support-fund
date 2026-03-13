@@ -25,8 +25,8 @@ def get_users():
         'full_name': u.full_name,
         'role': u.role,
         'is_active': u.is_active,
-        'created_at': u.created_at.isoformat() if u.created_at else None,
-        'last_login': u.last_login.isoformat() if u.last_login else None,
+        'created_at': u.created_at.isoformat() + 'Z' if u.created_at else None,
+        'last_login': u.last_login.isoformat() + 'Z' if u.last_login else None,
         'two_factor_enabled': u.two_factor_enabled
     } for u in pagination.items]
 

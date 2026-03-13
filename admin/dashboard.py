@@ -70,7 +70,7 @@ def get_dashboard():
         'donor_name': 'Аноним' if d.is_anonymous else d.donor_name,
         'amount': d.amount,
         'status': d.status,
-        'created_at': d.created_at.isoformat()
+        'created_at': d.created_at.isoformat() + 'Z'
     } for d in recent_donations]
 
     return jsonify({

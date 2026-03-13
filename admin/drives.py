@@ -54,7 +54,7 @@ def get_drives():
             'collected': d.collected,
             'needed': d.needed,
             'progress': d.progress_percentage,
-            'created_at': d.created_at.isoformat() if d.created_at else None
+            'created_at': d.created_at.isoformat() + 'Z' if d.created_at else None
         })
 
     return jsonify({
