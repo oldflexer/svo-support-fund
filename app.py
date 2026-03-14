@@ -4,6 +4,7 @@ from flask import Flask, render_template, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from dotenv import load_dotenv
 
 from config import config
 from models import db, User
@@ -14,6 +15,9 @@ from auth import auth_bp
 # -------------------------------
 # Initialize
 # -------------------------------
+
+# Load .env
+load_dotenv()
 
 # Create Flask app
 app = Flask(__name__, static_folder='static', template_folder='templates')
