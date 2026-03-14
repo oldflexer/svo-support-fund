@@ -206,7 +206,7 @@ const app = createApp({
                     volunteerForm.can_deliver = false;
                 } else {
                     const err = await response.json();
-                    showNotification(err.error || 'Ошибка при отправке', 'error');
+                    showNotification(err.errors || 'Ошибка при отправке', 'error');
                 }
             } catch (e) {
                 showNotification('Ошибка сети', 'error');
@@ -239,7 +239,7 @@ const app = createApp({
 
                 } else {
                     const err = await response.json();
-                    showNotification(err.error || 'Ошибка при отправке', 'error');
+                    showNotification(err.errors || 'Ошибка при отправке', 'error');
                 }
             } catch (e) {
                 showNotification('Ошибка сети', 'error');

@@ -51,9 +51,9 @@ def get_news():
 def create_news():
     data = request.get_json() or {}
 
-    form = NewsForm(data=data)
-    # if not form.validate():
-    #     return jsonify({'errors': form.errors}), 400
+    form = NewsForm(data=data, meta={'csrf': False})
+    if not form.validate():
+        return jsonify({'errors': form.errors}), 400
     
     article = NewsArticle(
         title=form.title.data,

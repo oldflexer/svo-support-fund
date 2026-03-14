@@ -17,7 +17,7 @@ from auth import auth_bp
 # -------------------------------
 
 # Load .env
-load_dotenv()
+# load_dotenv()
 
 # Create Flask app
 app = Flask(__name__, static_folder='static', template_folder='templates')

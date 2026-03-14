@@ -76,11 +76,11 @@ def create_drive():
     Requires authentication and admin/moderator role.
     """
     data = request.get_json() or {}
-    form = DriveForm(data=data)
-    # if not form.validate():
-    #     return jsonify({'errors': form.errors}), 400
+    form = DriveForm(data=data, meta={'csrf': False})
+    if not form.validate():
+        return jsonify({'errors': form.errors}), 400
 
-    needs_json = json.dumps(form.needs.data, ensure_ascii=False)
+    needs_json = json.dumps(data.get('needs', []), ensure_ascii=False)
     
     drive = Drive(
         title=form.title.data,

@@ -24,9 +24,9 @@ def create_volunteer():
     No authentication required.
     """
     data = request.get_json()
-    form = VolunteerForm(data=data)
-    # if not form.validate():
-    #     return jsonify({'errors': form.errors}), 400
+    form = VolunteerForm(data=data, meta={'csrf': False})
+    if not form.validate():
+        return jsonify({'errors': form.errors}), 400
     
     volunteer = Volunteer(
         name=form.name.data,

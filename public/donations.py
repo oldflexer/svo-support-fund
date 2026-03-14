@@ -24,9 +24,9 @@ def create_donation():
     No authentication required.
     """
     data = request.get_json()
-    form = DonationForm(data=data)
-    # if not form.validate():
-    #     return jsonify({'errors': form.errors}), 400
+    form = DonationForm(data=data, meta={'csrf': False})
+    if not form.validate():
+        return jsonify({'errors': form.errors}), 400
     
     donation = Donation(
         donor_name=form.name.data,

@@ -27,7 +27,7 @@ def upload_image():
     Expects:
         - Form-data field 'file': the image file to upload.
         - Optional query parameter 'subfolder' (e.g., 'news', 'drives').
-    Returns JSON with the public URL of the uploaded file.
+    Returns JSON with the relative URL of the uploaded file.
     Requires authentication and admin/moderator role.
     """
     if 'file' not in request.files:
@@ -62,9 +62,9 @@ def upload_image():
     file.save(full_path)
 
     if subfolder:
-        file_url = url_for('uploaded_file', filename=f"{subfolder}/{new_filename}", _external=True)
+        file_url = url_for('uploaded_file', filename=f"{subfolder}/{new_filename}")
     else:
-        file_url = url_for('uploaded_file', filename=new_filename, _external=True)
+        file_url = url_for('uploaded_file', filename=new_filename)
 
     log_action(get_jwt_identity(), 'upload_image', f'Изображение {new_filename} загружено', request.remote_addr)
 
