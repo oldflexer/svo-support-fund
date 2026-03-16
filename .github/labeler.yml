@@ -1,0 +1,19 @@
+frontend:
+  - frontend/**/*
+  - src/ui/**/*.js
+  - src/ui/**/*.vue
+
+backend:
+  - backend/**/*
+  - api/**/*.py
+  - src/server/**/*.go
+
+documentation:
+  - docs/**/*
+  - README.md
+  - '**/*.md'
+
+dependencies:
+  - package.json
+  - requirements.txt
+  - go.mod
