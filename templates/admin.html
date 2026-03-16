@@ -377,11 +377,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="donation in donations.items" :key="donation.id">
+                                <tr v-for="donation in donations.items.value" :key="donation.id">
                                     <td>${ donation.id }</td>
                                     <td>${ donation.is_anonymous ? 'Аноним' : donation.donor_name }</td>
                                     <td class="amount-cell">${ formatCurrency(donation.amount) }</td>
-                                    <td>${ donation.message.length > 50 ? donation.message.substring(0, 50) + '...' : donation.message }</td>
+                                    <td>${ donation.message && donation.message.length > 50 ? donation.message.substring(0, 50) + '...' : donation.message || '' }</td>
                                     <td>
                                         <span class="status-badge" :class="donation.status">
                                             ${ donation.status }
@@ -397,18 +397,18 @@
                                         </select>
                                     </td>
                                 </tr>
-                                <tr v-if="donations.items.length === 0">
+                                <tr v-if="donations.items.value.length === 0">
                                     <td colspan="7" class="text-center">Нет записей</td>
                                 </tr>
                             </tbody>
                         </table>
                         
-                        <div class="pagination" v-if="donations.pages > 1">
-                            <button @click="prevDonationsPage" :disabled="donations.page === 1">
+                        <div class="pagination" v-if="donations.pages.value > 1">
+                            <button @click="donations.prevPage" :disabled="donations.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <span>Страница ${ donations.page } из ${ donations.pages }</span>
-                            <button @click="nextDonationsPage" :disabled="donations.page === donations.pages">
+                            <button @click="donations.nextPage" :disabled="donations.page === donations.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -448,15 +448,15 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="drive in drives.items" :key="drive.id">
+                                <tr v-for="drive in drives.items.value" :key="drive.id">
                                     <td>${ drive.id }</td>
                                     <td>${ drive.title }</td>
                                     <td>
                                         <ul class="needs-list">
-                                            <li v-for="(need, idx) in drive.needs.slice(0, 2)" :key="idx">
+                                            <li v-for="(need, idx) in (drive.needs || []).slice(0, 2)" :key="idx">
                                                 ${ need }
                                             </li>
-                                            <li v-if="drive.needs.length > 2">...</li>
+                                            <li v-if="drive.needs && drive.needs.length > 2">...</li>
                                         </ul>
                                     </td>
                                     <td>
@@ -486,18 +486,18 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-if="drives.items.length === 0">
+                                <tr v-if="drives.items.value.length === 0">
                                     <td colspan="9" class="text-center">Нет записей</td>
                                 </tr>
                             </tbody>
                         </table>
                         
-                        <div class="pagination" v-if="drives.pages > 1">
-                            <button @click="prevDrivesPage" :disabled="drives.page === 1">
+                        <div class="pagination" v-if="drives.pages.value > 1">
+                            <button @click="drives.prevPage" :disabled="drives.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <span>Страница ${ drives.page } из ${ drives.pages }</span>
-                            <button @click="nextDrivesPage" :disabled="drives.page === drives.pages">
+                            <button @click="drives.nextPage" :disabled="drives.page === drives.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -543,7 +543,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in news" :key="item.id">
+                                <tr v-for="item in news.items.value" :key="item.id">
                                     <td>${ item.id }</td>
                                     <td>
                                         <div class="news-thumbnail">
@@ -576,18 +576,18 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-if="news.length === 0">
-                                    <td colspan="8" class="text-center">Нет записей</td>
+                                <tr v-if="news.items.value.length === 0">
+                                    <td colspan="10" class="text-center">Нет записей</td>
                                 </tr>
                             </tbody>
                         </table>
                         
-                        <div class="pagination" v-if="news.pages > 1">
-                            <button @click="prevNewsPage" :disabled="news.page === 1">
+                        <div class="pagination" v-if="news.pages.value > 1">
+                            <button @click="news.prevPage" :disabled="news.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <span>Страница ${ news.page } из ${ news.pages }</span>
-                            <button @click="nextNewsPage" :disabled="news.page === news.pages">
+                            <button @click="news.nextPage" :disabled="news.page === news.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -632,7 +632,7 @@
                                     <td>${ volunteer.email }</td>
                                     <td>${ volunteer.phone }</td>
                                     <td>${ volunteer.city }</td>
-                                    <td>${ volunteer.skills.length > 25 ? volunteer.skills.substring(0, 25) + '...' : volunteer.skills }</td>
+                                    <td>${ volunteer.skills && volunteer.skills.length > 25 ? volunteer.skills.substring(0, 25) + '...' : volunteer.skills || '' }</td>
                                     <td>${ volunteer.can_deliver ? 'Да' : '' }</td>
                                     <td>
                                         <span class="status-badge" :class="volunteer.status">
@@ -656,12 +656,12 @@
                             </tbody>
                         </table>
                         
-                        <div class="pagination" v-if="volunteers.pages > 1">
-                            <button @click="prevVolunteersPage" :disabled="volunteers.page === 1">
+                        <div class="pagination" v-if="volunteers.pages.value > 1">
+                            <button @click="volunteers.prevPage" :disabled="volunteers.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <span>Страница ${ volunteers.page } из ${ volunteers.pages }</span>
-                            <button @click="nextVolunteersPage" :disabled="volunteers.page === volunteers.pages">
+                            <button @click="volunteers.nextPage" :disabled="volunteers.page === volunteers.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -693,7 +693,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="user in adminUsers.items" :key="user.id">
+                                <tr v-for="user in adminUsers.items.value" :key="user.id">
                                     <td>${ user.id }</td>
                                     <td>${ user.username }</td>
                                     <td>${ user.email }</td>
@@ -722,18 +722,18 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-if="adminUsers.items.length === 0">
+                                <tr v-if="adminUsers.items.value.length === 0">
                                     <td colspan="9" class="text-center">Нет записей</td>
                                 </tr>
                             </tbody>
                         </table>
 
-                        <div class="pagination" v-if="adminUsers.pages > 1">
-                            <button @click="prevUsersPage" :disabled="adminUsers.page === 1">
+                        <div class="pagination" v-if="adminUsers.pages.value > 1">
+                            <button @click="adminUsers.prevPage" :disabled="adminUsers.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <span>Страница ${ adminUsers.page } из ${ adminUsers.pages }</span>
-                            <button @click="nextUsersPage" :disabled="adminUsers.page === adminUsers.pages">
+                            <button @click="adminUsers.nextPage" :disabled="adminUsers.page === adminUsers.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -748,10 +748,11 @@
                             <!-- Фильтр по пользователю (опционально) -->
                             <select v-model="auditFilters.user_id" class="filter-select">
                                 <option :value="null">Все пользователи</option>
-                                <option v-for="user in adminUsers?.items || []" :key="user.id" :value="user.id">
+                                <option v-for="user in adminUsers?.items.value || []" :key="user.id" :value="user.id">
                                     [${ user.id }] ${ user.username }
                                 </option>
                             </select>
+                            ${ adminUsers }
                         </div>
                     </div>
                     
@@ -768,7 +769,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="log in auditLogs?.items || []" :key="log.id">
+                                <tr v-for="log in auditLogs?.items.value || []" :key="log.id">
                                     <td>${ log.id }</td>
                                     <td>${ log.username }</td>
                                     <td>${ log.action }</td>
@@ -776,18 +777,18 @@
                                     <td>${ log.ip_address }</td>
                                     <td>${ formatDate(log.created_at) }</td>
                                 </tr>
-                                <tr v-if="auditLogs.items.length === 0">
+                                <tr v-if="auditLogs.items.value.length === 0">
                                     <td colspan="6" class="text-center">Нет записей</td>
                                 </tr>
                             </tbody>
                         </table>
                         
-                        <div class="pagination" v-if="auditLogs.pages > 1">
-                            <button @click="prevAuditPage" :disabled="auditLogs.page === 1">
+                        <div class="pagination" v-if="auditLogs.pages.value > 1">
+                            <button @click="auditLogs.prevPage" :disabled="auditLogs.page === 1">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
                             <span>Страница ${ auditLogs.page } из ${ auditLogs.pages }</span>
-                            <button @click="nextAuditPage" :disabled="auditLogs.page === auditLogs.pages">
+                            <button @click="auditLogs.nextPage" :disabled="auditLogs.page === auditLogs.pages">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
@@ -1463,7 +1464,7 @@
 		});
 	};
 	</script>
-
+    <script src="../static/js/pagination.js"></script>
     <script src="../static/js/admin.js"></script>
 </body>
 </html>

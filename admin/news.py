@@ -28,9 +28,11 @@ def get_news():
         is_verified = is_verified.lower() == 'true'
         query = query.filter_by(is_verified=is_verified)
 
-    pagination = query.order_by(NewsArticle.published_at.desc()).paginate(page=page, per_page=per_page)
-    
-    result = [{
+    pagination = query.order_by(NewsArticle.published_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+
+    items = [{
         'id': a.id,
         'title': a.title,
         'slug': a.slug,
@@ -41,9 +43,14 @@ def get_news():
         'views_count': a.views_count,
         'read_time': a.read_time,
         'published_at': a.published_at.isoformat() + 'Z' if a.published_at else None
-    } for a in pagination]
-    
-    return jsonify(result), 200
+    } for a in pagination.items]
+
+    return jsonify({
+        'items': items,
+        'total': pagination.total,
+        'page': pagination.page,
+        'pages': pagination.pages
+    }), 200
 
 @admin_bp.route('/news', methods=['POST'])
 @jwt_required()
