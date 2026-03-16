@@ -480,6 +480,16 @@
                                     <span>Сделать пожертвование анонимно</span>
                                 </label>
                             </div>
+
+                            <div class="form-group">
+                                <label><i class="fas fa-box-open"></i> Целевой сбор (необязательно)</label>
+                                <select v-model="selectedDriveId" class="form-control">
+                                    <option :value="null">Общий сбор (без привязки)</option>
+                                    <option v-for="drive in drivesList" :key="drive.id" :value="drive.id">
+                                        ${ drive.title } (собрано ${ formatCurrency(drive.collected) } из ${ formatCurrency(drive.needed) })
+                                    </option>
+                                </select>
+                            </div>
                             
                             <button type="submit" class="btn-primary btn-block" :disabled="donationLoading">
                                 <i class="fas fa-paper-plane"></i>
@@ -569,6 +579,16 @@
                                 <input type="checkbox" v-model="donationForm.is_anonymous">
                                 <span>Сделать пожертвование анонимно</span>
                             </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fas fa-box-open"></i> Целевой сбор (необязательно)</label>
+                            <select v-model="selectedDriveId" class="form-control">
+                                <option :value="null">Общий сбор (без привязки)</option>
+                                <option v-for="drive in drivesList" :key="drive.id" :value="drive.id">
+                                    ${ drive.title } (собрано ${ formatCurrency(drive.collected) } из ${ formatCurrency(drive.needed) })
+                                </option>
+                            </select>
                         </div>
                         
                         <button type="submit" class="btn-primary btn-block" :disabled="donationLoading">

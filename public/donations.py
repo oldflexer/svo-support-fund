@@ -7,7 +7,7 @@ All endpoints are accessible without authentication.
 
 from flask import request, jsonify
 from forms import DonationForm
-from models import db, Donation
+from models import db, Donation, Drive
 from utils import update_setting
 from . import public_bp
 
@@ -28,12 +28,21 @@ def create_donation():
     if not form.validate():
         return jsonify({'errors': form.errors}), 400
     
+    drive_id = data.get('drive_id')
+    if drive_id is not None:
+        drive = Drive.query.get(drive_id)
+        if not drive:
+            return jsonify({'error': 'Указанный сбор не существует'}), 400
+        if drive.status != 'активен':
+            return jsonify({'error': 'Выбранный сбор не активен'}), 400
+    
     donation = Donation(
         donor_name=form.name.data,
         amount=form.amount.data,
         message=form.message.data,
         is_anonymous=form.is_anonymous.data,
-        status='ожидает'
+        status='ожидает',
+        drive_id=drive_id
     )
     db.session.add(donation)
     db.session.commit()

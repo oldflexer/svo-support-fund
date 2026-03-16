@@ -15,6 +15,9 @@ const app = createApp({
         const drivesPage = ref(1);
         const drivesPerPage = ref(3);
         const drivesTotalPages = ref(1);
+
+        const drivesList = ref([]);
+        const selectedDriveId = ref(null);
         
         // News
         const news = ref({ items: [] });
@@ -46,6 +49,7 @@ const app = createApp({
         
         // UI
         const showDonationModal = ref(false);
+
         const notification = reactive({
             show: false,
             type: 'success',
@@ -105,8 +109,18 @@ const app = createApp({
 
         const setDrivesFilter = (filter) => {
             drivesFilter.value = filter;
-            drivesPage.value = 1; // сбрасываем на первую страницу
+            drivesPage.value = 1;
             fetchDrives(1);
+        };
+
+        const fetchDrivesForSelect = async () => {
+            try {
+                const response = await fetch('/api/public/drives?status=активен');
+                const data = await response.json();
+                drivesList.value = data.items || [];
+            } catch (e) {
+                console.error('Failed to fetch drives for select', e);
+            }
         };
 
         const fetchNews = async (page = newsPage.value) => {
@@ -225,7 +239,8 @@ const app = createApp({
                         name: donationForm.is_anonymous ? 'Аноним' : donationForm.name,
                         amount: donationForm.amount,
                         message: donationForm.message,
-                        is_anonymous: donationForm.is_anonymous
+                        is_anonymous: donationForm.is_anonymous,
+                        drive_id: selectedDriveId.value
                     })
                 });
                 if (response.ok) {
@@ -282,6 +297,7 @@ const app = createApp({
 
         // Lifecycle
         onMounted(() => {
+            fetchDrivesForSelect();
             fetchStats();
             fetchDrives(1);
             fetchNews(1);
@@ -296,6 +312,9 @@ const app = createApp({
             drivesPage,
             drivesPerPage,
             drivesTotalPages,
+
+            drivesList,
+            selectedDriveId,
 
             news,
             featuredArticle,
