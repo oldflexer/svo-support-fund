@@ -66,6 +66,8 @@ def update_setting(key, value):
 def is_allowed_image(file_stream, filename):
     allowed_extensions = current_app.config.get('ALLOWED_IMAGE_EXTENSIONS', set())
     allowed_mime_types = current_app.config.get('ALLOWED_IMAGE_MIME_TYPES', set())
+    max_width = current_app.config.get('MAX_IMAGE_WIDTH', 2000)
+    max_height = current_app.config.get('MAX_IMAGE_HEIGHT', 2000)
 
     ext = os.path.splitext(filename)[1].lower()
     if ext not in allowed_extensions:
@@ -82,6 +84,11 @@ def is_allowed_image(file_stream, filename):
 
         if mime_type not in allowed_mime_types:
             return False, "Недопустимый тип изображения"
+        
+        # Check image dimensions
+        width, height = img.size
+        if width > max_width or height > max_height:
+            return False, f"Размер изображения превышает допустимый (макс. {max_width}x{max_height}"
         
     except Exception:
         return False, "Файл не является изображением или повреждён"

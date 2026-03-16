@@ -28,6 +28,10 @@ class Config:
     ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
     ALLOWED_IMAGE_MIME_TYPES = {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
 
+    # Image size limits (in pixels)
+    MAX_IMAGE_WIDTH = 2000
+    MAX_IMAGE_HEIGHT = 2000
+
 class DevelopmentConfig(Config):
     DEBUG = True
 
