@@ -93,6 +93,16 @@ class NewsArticle(db.Model):
         # rough estimate: 200 words per minute
         word_count = len(self.content.split()) if self.content else 0
         return max(1, round(word_count / 200))
+    
+class NewsImage(db.Model):
+    __tablename__ = 'news_images'
+
+    id = db.Column(db.Integer, primary_key=True)
+    news_id = db.Column(db.Integer, db.ForeignKey('news.id'), nullable=False)
+    image_url = db.Column(db.String(500), nullable=False)
+    position = db.Column(db.Integer, default=0)  # для сортировки
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC).replace(tzinfo=None))
+    news = db.relationship('NewsArticle', backref=db.backref('images', order_by=position, cascade='all, delete-orphan'))
 
 class Volunteer(db.Model):
     __tablename__ = 'volunteers'
