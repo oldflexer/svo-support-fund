@@ -1067,6 +1067,19 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="form-group full-width">
+                                        <label>Дополнительные изображения</label>
+                                        <div class="image-upload">
+                                            <input type="file" accept="image/*" multiple @change="uploadAdditionalImages" :disabled="additionalImagesLoading">
+                                            <span v-if="additionalImagesLoading" class="upload-spinner">Загрузка...</span>
+                                            <div class="image-gallery">
+                                                <div v-for="(img, index) in newsForm.images" :key="img.tempId || img.id" class="gallery-item">
+                                                    <img :src="img.url" alt="preview">
+                                                    <button type="button" @click="removeImage(index)" class="btn-icon btn-danger">✕</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div v-if="newsError" class="alert alert-error">

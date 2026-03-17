@@ -75,7 +75,8 @@ const app = createApp({
             content: '',
             category: 'новости',
             is_verified: false,
-            main_image: ''
+            main_image: '',
+            images: []
         });
         const newsLoading = ref(false);
         const newsError = ref('');
@@ -101,6 +102,7 @@ const app = createApp({
 
         const newsCategoryFilter = ref('');
         const newsVerifiedFilter = ref('');
+        const additionalImagesLoading = ref(false);
 
         // New user modal
         const showUserModal = ref(false);
@@ -335,19 +337,19 @@ const app = createApp({
             }
         };
         
-        watch(() => statsData.count_new_donations, () => {
+        watch(() => statsData.value?.count_new_donations, () => {
             loadSidebar();
         });
 
-        watch(() => statsData.count_active_drives, () => {
+        watch(() => statsData.value?.count_active_drives, () => {
             loadSidebar();
         });
 
-        watch(() => statsData.count_not_verified_news, () => {
+        watch(() => statsData.value?.count_not_verified_news, () => {
             loadSidebar();
         });
 
-        watch(() => statsData.count_new_volunteers, () => {
+        watch(() => statsData.value?.count_new_volunteers, () => {
             loadSidebar();
         });
 
@@ -535,6 +537,7 @@ const app = createApp({
             newsForm.category = item.category;
             newsForm.is_verified = item.is_verified;
             newsForm.main_image = item.main_image || '';
+            newsForm.images = (item.images || []).map(img => ({ url: img.url, id: img.id }));
             showNewsModal.value = true;
         };
 
@@ -546,6 +549,7 @@ const app = createApp({
             newsForm.category = 'новости';
             newsForm.is_verified = false;
             newsForm.main_image = '';
+            newsForm.images = [];
             newsError.value = '';
         };
 
@@ -559,10 +563,20 @@ const app = createApp({
                     url = `/api/admin/news/${editingNewsId.value}`;
                     method = 'PUT';
                 }
+                const payload = {
+                    title: newsForm.title,
+                    slug: newsForm.slug,
+                    excerpt: newsForm.excerpt,
+                    content: newsForm.content,
+                    category: newsForm.category,
+                    main_image: newsForm.main_image,
+                    is_verified: newsForm.is_verified,
+                    additional_images: newsForm.images.map(img => img.url)
+                };
                 const response = await apiFetch(url, {
                     method: method,
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newsForm)
+                    body: JSON.stringify(payload)
                 });
                 if (!response.ok) {
                     const err = await response.json();
@@ -619,6 +633,53 @@ const app = createApp({
             } catch (e) {
                 showNotification(e.message, 'error');
             }
+        };
+
+        const uploadAdditionalImages = async (event) => {
+            const files = Array.from(event.target.files);
+            if (files.length === 0) return;
+
+            additionalImagesLoading.value = true;
+            let successCount = 0;
+            let errorCount = 0;
+
+            try {
+                for (const file of files) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const response = await apiFetch('/api/admin/upload?subfolder=news', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            newsForm.images.push({ 
+                                url: data.url, 
+                                tempId: Date.now() + Math.random() + successCount
+                            });
+                            successCount++;
+                        } else {
+                            const error = await response.json();
+                            showNotification(`Ошибка загрузки файла ${file.name}: ${error.error || 'Неизвестная ошибка'}`, 'error');
+                            errorCount++;
+                        }
+                    } catch (e) {
+                        showNotification(`Ошибка сети при загрузке файла ${file.name}`, 'error');
+                        errorCount++;
+                    }
+                }
+                if (successCount > 0) {
+                    showNotification(`Загружено изображений: ${successCount}${errorCount > 0 ? `, ошибок: ${errorCount}` : ''}`, 'success');
+                }
+            } finally {
+                additionalImagesLoading.value = false;
+                event.target.value = '';
+            }
+        };
+
+        const removeImage = (index) => {
+            newsForm.images.splice(index, 1);
         };
 
         const generateSlug = (text) => {
@@ -1168,6 +1229,7 @@ const app = createApp({
             volunteerStatusFilter,
             newsCategoryFilter,
             newsVerifiedFilter,
+            additionalImagesLoading,
             auditFilters,
 
             donationsChart,
@@ -1206,6 +1268,8 @@ const app = createApp({
             deleteNews,
 
             uploadNewsImage,
+            uploadAdditionalImages,
+            removeImage,
             generateSlug,
 
             saveSettings,

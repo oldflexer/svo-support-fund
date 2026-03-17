@@ -57,6 +57,7 @@ def get_news_detail(slug):
         'excerpt': article.excerpt,
         'category': article.category,
         'main_image': article.main_image,
+        'images': [{'url': img.image_url, 'position': img.position} for img in article.images],
         'is_verified': article.is_verified,
         'views_count': article.views_count,
         'read_time': article.read_time,
