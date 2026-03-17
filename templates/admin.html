@@ -672,7 +672,7 @@
                 <div v-if="activeTab === 'users'" class="tab-content">
                     <div class="tab-header">
                         <h2><i class="fas fa-users-cog"></i> Управление администраторами</h2>
-                        <button @click="showUserModal = true" class="btn-primary">
+                        <button @click="openAddUserModal()" class="btn-primary">
                             <i class="fas fa-user-plus"></i> Добавить администратора
                         </button>
                     </div>
@@ -1101,15 +1101,18 @@
                     </div>
                 </div>
                 
-                <!-- Модальное окно нового пользователя -->
+                <!-- Модальное окно пользователя (единое) -->
                 <div v-if="showUserModal" class="modal-overlay">
                     <div class="modal-content modal-lg" @click.stop>
                         <div class="modal-header">
-                            <h3><i class="fas fa-user-plus"></i> Добавить администратора</h3>
+                            <h3>
+                                <i class="fas" :class="userModalMode === 'add' ? 'fa-user-plus' : 'fa-user-edit'"></i>
+                                ${ userModalMode === 'add' ? 'Добавить администратора' : 'Редактировать пользователя' }
+                            </h3>
                             <button @click="showUserModal = false" class="modal-close">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <form @submit.prevent="createUser" class="modal-form">
+                            <form @submit.prevent="saveUser" class="modal-form" id="userForm">
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label><i class="fas fa-user"></i> Логин *</label>
@@ -1124,8 +1127,11 @@
                                         <input type="text" v-model="userForm.full_name">
                                     </div>
                                     <div class="form-group">
-                                        <label><i class="fas fa-lock"></i> Пароль *</label>
-                                        <input type="password" v-model="userForm.password" required minlength="6">
+                                        <label><i class="fas fa-lock"></i> Пароль 
+                                            <span v-if="userModalMode === 'edit'">(оставьте пустым, если не меняете)</span>
+                                            <span v-else>*</span>
+                                        </label>
+                                        <input type="password" v-model="userForm.password" :required="userModalMode === 'add'" minlength="6">
                                     </div>
                                     <div class="form-group">
                                         <label><i class="fas fa-user-tag"></i> Роль</label>
@@ -1141,84 +1147,24 @@
                                         </label>
                                     </div>
                                 </div>
-                                
                                 <div v-if="userError" class="alert alert-error">
                                     <i class="fas fa-exclamation-circle"></i> ${ userError }
                                 </div>
-                                
-                                <div class="modal-actions">
-                                    <button type="button" @click="showUserModal = false" class="btn-secondary">
-                                        <i class="fas fa-times"></i> Отмена
-                                    </button>
-                                    <button type="submit" class="btn-primary" :disabled="userLoading">
-                                        <i class="fas fa-save"></i> 
-                                        ${ userLoading ? 'Сохранение...' : 'Создать' }
-                                    </button>
-                                </div>
                             </form>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Модальное окно редактирования пользователя -->
-                <div v-if="editUserModal" class="modal-overlay">
-                    <div class="modal-content modal-lg" @click.stop>
-                        <div class="modal-header">
-                            <h3><i class="fas fa-user-plus"></i> Редактировать пользователя</h3>
-                            <button @click="editUserModal = false" class="modal-close">&times;</button>
-                        </div>
-                        <div class="modal-body">
-                            <form @submit.prevent="createUser" class="modal-form">
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label><i class="fas fa-user"></i> Логин *</label>
-                                        <input type="text" v-model="userForm.username">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fas fa-envelope"></i> Email *</label>
-                                        <input type="email" v-model="userForm.email">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fas fa-id-card"></i> ФИО</label>
-                                        <input type="text" v-model="userForm.full_name">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fas fa-lock"></i> Пароль *</label>
-                                        <input type="password" v-model="userForm.password" minlength="6">
-                                    </div>
-                                    <div class="form-group">
-                                        <label><i class="fas fa-user-tag"></i> Роль</label>
-                                        <select v-model="userForm.role">
-                                            <option value="moderator">Модератор</option>
-                                            <option value="admin">Администратор</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" v-model="userForm.is_active">
-                                            <span>Активен</span>
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <div v-if="userError" class="alert alert-error">
-                                    <i class="fas fa-exclamation-circle"></i> ${ userError }
-                                </div>
-                                
-                                <div class="modal-actions">
-                                    <!-- <button type="button" @click="editUserModal = false" class="btn-secondary">
-                                        <i class="fas fa-times"></i> Отмена
-                                    </button> -->
-                                    <button type="submit" class="btn-primary" :disabled="userLoading">
-                                        <i class="fas fa-save"></i> 
-                                        ${ userLoading ? 'Сохранение...' : 'Сохранить' }
-                                    </button>
-                                    <button type="button" @click="confirmDeleteUser" class="btn-primary" :disabled="userLoading">
-                                        <i class="fas fa-trash"></i> 
-                                        ${ userLoading ? 'Удаление...' : 'Удалить' }
-                                    </button>
-                                </div>
-                            </form>
+                        <div class="modal-footer">
+                            <div class="modal-actions">
+                                <button type="button" @click="showUserModal = false" class="btn-secondary">
+                                    <i class="fas fa-times"></i> Отмена
+                                </button>
+                                <button v-if="userModalMode === 'edit'" type="button" @click="confirmDeleteUser" class="btn-danger" :disabled="userLoading">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                                <button type="submit" form="userForm" class="btn-primary" :disabled="userLoading">
+                                    <i class="fas fa-save"></i> 
+                                    ${ userLoading ? 'Сохранение...' : (userModalMode === 'add' ? 'Создать' : 'Сохранить') }
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

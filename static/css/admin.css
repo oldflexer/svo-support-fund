@@ -1665,7 +1665,7 @@
 /* Form grid (used in modals) */
 .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1rem;
 }
 

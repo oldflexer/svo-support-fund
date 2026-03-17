@@ -106,6 +106,8 @@ const app = createApp({
 
         // New user modal
         const showUserModal = ref(false);
+        const userModalMode = ref('add');
+        const editingUserId = ref(null);
         const userLoading = ref(false);
         const userError = ref('');
         const userForm = reactive({
@@ -122,10 +124,6 @@ const app = createApp({
         const settingsLoading = ref(false);
         const settingsSaving = ref(false);
         const settingsError = ref('');
-        
-        // Edit user modal
-        const editUserModal = ref(false);
-        const editingUserId = ref(null);
         
         // UI state
         const activeTab = ref('dashboard');
@@ -784,31 +782,11 @@ const app = createApp({
             }
         };
 
-        const createUser = async () => {
-            userLoading.value = true;
-            userError.value = '';
-            try {
-                const response = await apiFetch('/api/admin/users', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(userForm)
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    userError.value = data.error || 'Ошибка при создании пользователя';
-                    return;
-                }
-                showNotification('Пользователь успешно создан', 'success');
-                showUserModal.value = false;
-                resetUserForm();
-                if (activeTab.value === 'users') {
-                    adminUsers.load(adminUsers.page.value);
-                }
-            } catch (e) {
-                userError.value = 'Ошибка сети';
-            } finally {
-                userLoading.value = false;
-            }
+        const openAddUserModal = () => {
+            userModalMode.value = 'add';
+            editingUserId.value = null;
+            resetUserForm();
+            showUserModal.value = true;
         };
 
         const resetUserForm = () => {
@@ -822,29 +800,26 @@ const app = createApp({
         };
 
         const editUser = (user) => {
-            editUserModal.value = true;
+            userModalMode.value = 'edit';
             editingUserId.value = user.id;
-            userError.value = '';
-            
             userForm.username = user.username;
             userForm.email = user.email;
             userForm.full_name = user.full_name || '';
             userForm.password = '';
             userForm.role = user.role;
             userForm.is_active = user.is_active;
-        };
-
-        const closeEditUserModal = () => {
-            editUserModal.value = false;
-            resetUserForm();
+            userError.value = '';
+            showUserModal.value = true;
         };
 
         const saveUser = async () => {
             userLoading.value = true;
             userError.value = '';
             try {
-                const response = await apiFetch(`/api/admin/users/${editingUserId.value}`, {
-                    method: 'PUT',
+                const url = userModalMode.value === 'add' ? '/api/admin/users' : `/api/admin/users/${editingUserId.value}`;
+                const method = userModalMode.value === 'add' ? 'POST' : 'PUT';
+                const response = await apiFetch(url, {
+                    method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(userForm)
                 });
@@ -853,16 +828,15 @@ const app = createApp({
                     userError.value = data.error || 'Ошибка при сохранении пользователя';
                     return;
                 }
-
-                showNotification('Пользователь обновлен', 'success');
-                editUserModal.value = false;
-                editingUserId.value = null;
+                showNotification(
+                    userModalMode.value === 'add' ? 'Пользователь создан' : 'Пользователь обновлен',
+                    'success'
+                );
+                showUserModal.value = false;
                 resetUserForm();
-
                 if (activeTab.value === 'users') {
                     adminUsers.load(adminUsers.page.value);
                 }
-
             } catch (e) {
                 userError.value = 'Ошибка сети';
             } finally {
@@ -900,8 +874,7 @@ const app = createApp({
                         adminUsers.load(adminUsers.page.value);
                     }
                 }
-                
-                closeEditUserModal();
+                showUserModal.value = false
 
             } catch (e) {
                 userError.value = 'Ошибка сети';
@@ -1196,12 +1169,11 @@ const app = createApp({
             settingsError,
 
             showUserModal,
+            userModalMode,
+            editingUserId,
             userLoading,
             userError,
             userForm,
-
-            editUserModal,
-            editingUserId,
 
             showDriveModal,
             driveModalMode,
@@ -1277,14 +1249,13 @@ const app = createApp({
 
             updateVolunteerStatus,
 
-            createUser,
             resetUserForm,
             editUser,
-            closeEditUserModal,
             saveUser,
             confirmDeleteUser,
             deleteUser,
             toggleUserStatus,
+            openAddUserModal,
 
             setActiveTab,
             getTabTitle,
