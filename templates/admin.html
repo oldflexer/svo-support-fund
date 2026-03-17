@@ -991,9 +991,6 @@
                         </div>
                         <div class="modal-footer">
                             <div class="modal-actions">
-                                <button type="button" @click="showDriveModal = false" class="btn-secondary">
-                                    <i class="fas fa-times"></i> Отмена
-                                </button>
                                 <button type="submit" form="driveForm" class="btn-primary" :disabled="driveLoading">
                                     <i class="fas fa-save"></i> 
                                     ${ driveLoading ? 'Сохранение...' : (driveModalMode === 'add' ? 'Создать' : 'Сохранить') }
@@ -1089,9 +1086,6 @@
                         </div>
                         <div class="modal-footer">
                             <div class="modal-actions">
-                                <button type="button" @click="showNewsModal = false" class="btn-secondary">
-                                    <i class="fas fa-times"></i> Отмена
-                                </button>
                                 <button type="submit" form="newsForm" class="btn-primary" :disabled="newsLoading">
                                     <i class="fas fa-save"></i> 
                                     ${ newsLoading ? 'Сохранение...' : (newsModalMode === 'add' ? 'Создать' : 'Сохранить') }
@@ -1154,10 +1148,7 @@
                         </div>
                         <div class="modal-footer">
                             <div class="modal-actions">
-                                <button type="button" @click="showUserModal = false" class="btn-secondary">
-                                    <i class="fas fa-times"></i> Отмена
-                                </button>
-                                <button v-if="userModalMode === 'edit'" type="button" @click="confirmDeleteUser" class="btn-danger" :disabled="userLoading">
+                                <button v-if="userModalMode === 'edit'" type="button" @click="confirmDeleteUser" class="btn-primary" :disabled="userLoading">
                                     <i class="fas fa-trash"></i> Удалить
                                 </button>
                                 <button type="submit" form="userForm" class="btn-primary" :disabled="userLoading">
