@@ -11,4 +11,4 @@ from flask import Blueprint
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
-from . import sidebar, dashboard, stats, donations, drives, news, upload, volunteers, users, audit, settings
+from . import sidebar, dashboard, stats, donations, drives, news, upload, volunteers, users, audit, settings, notifications

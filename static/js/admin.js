@@ -1,4 +1,4 @@
-const { createApp, ref, reactive, onMounted, computed, watch } = Vue;
+const { createApp, ref, reactive, onMounted, onUnmounted, computed, watch } = Vue;
 
 const app = createApp({
     delimiters: ['${', '}'],
@@ -160,6 +160,9 @@ const app = createApp({
             admin: 'Администратор',
             moderator: 'Модератор'
         };
+
+        const lastNotificationCheck = ref(new Date().toISOString());
+        const notificationPollInterval = ref(null);
 
         // Methods
         const apiFetch = async (url, options = {}) => {
@@ -982,7 +985,10 @@ const app = createApp({
         const showNotification = (message, type = 'success') => {
             notification.message = message;
             notification.type = type;
-            notification.icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            notification.icon =
+                type === 'success' ? 'fas fa-check-circle' : 
+                type === 'error' ? 'fas fa-exclamation-circle' : 
+                'fas fa-info-circle';
             notification.show = true;
             setTimeout(() => notification.show = false, 5000);
         };
@@ -1109,6 +1115,25 @@ const app = createApp({
             return roles.includes(currentUser.value.role);
         };
 
+        const pollNotifications = async () => {
+            try {
+                const response = await apiFetch(`/api/admin/notifications?last_check=${encodeURIComponent(lastNotificationCheck.value)}`);
+                if (!response.ok) return;
+                const data = await response.json();
+                lastNotificationCheck.value = data.server_time;
+
+                if (data.new_donations > 0 || data.new_volunteers > 0) {
+                    let parts = [];
+                    if (data.new_donations > 0) parts.push(`${data.new_donations} новых пожертвований`);
+                    if (data.new_volunteers > 0) parts.push(`${data.new_volunteers} новых заявок волонтёров`);
+                    showNotification(parts.join(' и '), 'info');
+                    loadSidebar(); // обновляем счётчики
+                }
+            } catch (e) {
+                console.error('Polling error', e);
+            }
+        };
+
         onMounted(() => {
             const token = localStorage.getItem('access_token');
             if (token) {
@@ -1124,6 +1149,14 @@ const app = createApp({
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('refresh_token');
                     });
+                notificationPollInterval.value = setInterval(pollNotifications, 30000);
+                pollNotifications();
+            }
+        });
+
+        onUnmounted(() => {
+            if (notificationPollInterval.value) {
+                clearInterval(notificationPollInterval.value);
             }
         });
 
@@ -1206,6 +1239,9 @@ const app = createApp({
             
             // Constants
             roleLabels,
+
+            lastNotificationCheck,
+            notificationPollInterval,
 
             // Methods
             apiFetch,
