@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
+from vite_helpers import vite_asset
 
 from config import config
 from models import db, User
@@ -66,6 +67,9 @@ with app.app_context():
 
     print('Database initialized.')
 
+@app.context_processor
+def utility_processor():
+    return dict(vite_asset=vite_asset)
 
 # -------------------------------
 # Frontend routes
@@ -79,9 +83,9 @@ def index():
 def admin():
     return render_template('admin.html')
 
-# @app.route('/static/<path:path>')
-# def send_static(path):
-#     return send_from_directory('static', path)
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('static', filename)
 
 @app.route('/static/uploads/<path:filename>')
 def uploaded_file(filename):

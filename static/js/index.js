@@ -264,12 +264,11 @@ const app = createApp({
         };
 
         const showDonationForDrive = (driveId) => {
-            // Could pre-fill drive info
             showDonationModal.value = true;
         };
 
         const viewArticle = (slug) => {
-            window.location.href = `/news/${slug}`; // or open modal
+            window.location.href = `/news/${slug}`;
         };
 
         const getCategoryName = (cat) => {
