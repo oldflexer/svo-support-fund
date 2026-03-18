@@ -3,7 +3,6 @@ import { apiFetch } from '../api.js';
 import { showNotification } from './notification.js';
 
 export const volunteerStatusFilter = ref('');
-export const volunteers = ref({ items: [] }); // будет заменено на загрузчик
 
 export const filteredVolunteers = computed(() => {
     if (!volunteerStatusFilter.value) return volunteers.value.items;
