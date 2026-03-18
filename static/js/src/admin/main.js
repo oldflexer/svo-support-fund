@@ -14,11 +14,12 @@ import * as drives from './drives.js';
 import * as news from './news.js';
 import * as volunteers from './volunteers.js';
 import * as users from './users.js';
-import * as audit from './audit.js';          // добавлен модуль аудита
+import * as audit from './audit.js';
 import * as settings from './settings.js';
 import * as notifications from './notifications.js';
 
 const app = createApp({
+    delimiters: ['${', '}'],
     setup() {
         // ---- локальные состояния ----
         const activeTab = ref('dashboard');
@@ -29,21 +30,78 @@ const app = createApp({
         const volunteerStatusFilter = ref('');
         const newsCategoryFilter = ref('');
         const newsVerifiedFilter = ref('');
-        // Фильтры для аудита теперь в audit.*
 
         // ---- загрузчики (используют фильтры) ----
-        const donationsLoader = createPaginatedLoader('/api/admin/donations', { status: donationStatusFilter }, apiFetch);
+        const donationsLoader = createPaginatedLoader('/api/admin/donations', { status: donationStatusFilter }, apiFetch, { perPage: 15 });
         const drivesLoader = createPaginatedLoader('/api/admin/drives', { status: driveStatusFilter }, apiFetch, { perPage: 5 });
-        const volunteersLoader = createPaginatedLoader('/api/admin/volunteers', { status: volunteerStatusFilter }, apiFetch);
+        const volunteersLoader = createPaginatedLoader('/api/admin/volunteers', { status: volunteerStatusFilter }, apiFetch, { perPage: 10 });
         const newsLoader = createPaginatedLoader('/api/admin/news', { category: newsCategoryFilter, verified: newsVerifiedFilter }, apiFetch, { perPage: 5 });
-        const usersLoader = createPaginatedLoader('/api/admin/users', {}, apiFetch);
-        const auditLoader = createPaginatedLoader('/api/admin/audit', { user_id: audit.auditUserId }, apiFetch);
+        const usersLoader = createPaginatedLoader('/api/admin/users', {}, apiFetch, { perPage: 10 });
+        const auditLoader = createPaginatedLoader('/api/admin/audit', { user_id: audit.auditUserId }, apiFetch, { perPage: 15 });
 
         // ---- computed для волонтёров ----
         const filteredVolunteers = computed(() => {
             if (!volunteerStatusFilter.value) return volunteersLoader.items.value;
             return volunteersLoader.items.value.filter(v => v.status === volunteerStatusFilter.value);
         });
+
+        // ---- функции для шапки ----
+        const getTabTitle = () => {
+            const map = {
+                dashboard: 'Панель управления',
+                stats: 'Статистика',
+                donations: 'Пожертвования',
+                drives: 'Сборы',
+                news: 'Новости',
+                volunteers: 'Волонтёры',
+                users: 'Администраторы',
+                audit: 'Логи действий',
+                settings: 'Настройки'
+            };
+            return map[activeTab.value] || 'Админ панель';
+        };
+
+        const getTabDescription = () => {
+            const map = {
+                dashboard: 'Общая статистика и последние действия',
+                stats: 'Подробная статистика по всем разделам',
+                donations: 'Управление входящими пожертвованиями',
+                drives: 'Управление сборами',
+                news: 'Управление новостной лентой',
+                volunteers: 'Управление заявками волонтёров',
+                users: 'Управление администраторами и модераторами',
+                audit: 'Аудит действий пользователей',
+                settings: 'Настройки сайта'
+            };
+            return map[activeTab.value] || '';
+        };
+
+        // ---- функция проверки прав ----
+        const hasPermission = (roles) => {
+            return roles.includes(auth.currentUser.value?.role);
+        };
+
+        // ---- метки ролей ----
+        const roleLabels = {
+            admin: 'Администратор',
+            moderator: 'Модератор'
+        };
+
+        // ---- обёртки для функций, которым нужны загрузчики ----
+        const saveDrive = () => drives.saveDrive(drivesLoader);
+        const confirmDeleteDrive = (id) => drives.confirmDeleteDrive(id, drivesLoader);
+        const deleteDrive = (id) => drives.deleteDrive(id, drivesLoader);
+
+        const saveNews = () => news.saveNews(newsLoader);
+        const confirmDeleteNews = (id) => news.confirmDeleteNews(id, newsLoader);
+        const deleteNews = (id) => news.deleteNews(id, newsLoader);
+
+        const saveUser = () => users.saveUser(usersLoader);
+        const confirmDeleteUser = () => users.confirmDeleteUser(users.editingUserId.value, usersLoader);
+        const deleteUser = (id) => users.deleteUser(id, usersLoader);
+        const toggleUserStatus = (user) => users.toggleUserStatus(user, usersLoader);
+
+        const updateDonationStatus = (id, status) => donations.updateDonationStatus(id, status, sidebar.loadSidebar);
 
         // ---- активная вкладка ----
         const setActiveTab = (tab) => {
@@ -108,14 +166,18 @@ const app = createApp({
             ...news,
             ...volunteers,
             ...users,
-            ...audit,          // теперь auditFilters и auditUserId доступны в шаблоне
+            ...audit,
             ...settings,
             ...notifications,
 
             // локальные
             activeTab,
-            notification,    // глобальный объект уведомлений
+            notification,
             setActiveTab,
+            getTabTitle,
+            getTabDescription,
+            hasPermission,
+            roleLabels,
 
             // фильтры
             donationStatusFilter,
@@ -135,6 +197,19 @@ const app = createApp({
             // computed
             filteredVolunteers,
 
+            // обёртки для функций с загрузчиками
+            saveDrive,
+            confirmDeleteDrive,
+            deleteDrive,
+            saveNews,
+            confirmDeleteNews,
+            deleteNews,
+            saveUser,
+            confirmDeleteUser,
+            deleteUser,
+            toggleUserStatus,
+            updateDonationStatus,
+
             // утилиты
             formatCurrency,
             formatPercent,
@@ -143,5 +218,10 @@ const app = createApp({
         };
     }
 });
+
+// Глобальный обработчик ошибок для отладки
+app.config.errorHandler = (err, instance, info) => {
+    console.error('Vue global error:', err, info);
+};
 
 app.mount('#admin-app');

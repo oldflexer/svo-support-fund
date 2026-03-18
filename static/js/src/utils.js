@@ -38,3 +38,10 @@ export function copyToClipboard(text, showNotification) {
         .then(() => showNotification('Скопировано'))
         .catch(() => showNotification('Ошибка копирования', 'error'));
 }
+
+export function scrollTo(elementId) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' });
+  }
+}

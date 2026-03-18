@@ -1,9 +1,13 @@
 __pycache__/
-.env
 .memory/
 .venv/
 .vscode/
+node_modules/
+static/dist/*
 static/uploads/news/*
+static/docs/*
+.env
+*.pyc
 *.db
 *.sqlite
 *.pdf

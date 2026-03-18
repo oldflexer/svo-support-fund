@@ -3,7 +3,7 @@ import { apiFetch } from '../api.js';
 import { showNotification } from './notification.js';
 
 export const isAuthenticated = ref(false);
-export const currentUser = ref({});
+export const currentUser = ref({ role: '' });
 export const loginForm = reactive({ username: '', password: '' });
 export const loginError = ref('');
 export const loading = ref(false);
