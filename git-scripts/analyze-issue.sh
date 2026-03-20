@@ -19,7 +19,7 @@ fi
 # Ask Cline for its analysis, showing only the summary
 cline -y "$PROMPT: $ISSUE_URL" --mode act $ADDRESS -F json | \
     --model-provider openrouter \
-    --model "arcee-ai/trinity-large-preview:free"
+    --model "arcee-ai/trinity-large-preview:free" \
     sed -n '/^{/,$p' | \
     jq -r 'select(.say == "completion_result") | .text' | \
     sed 's/\\n/\n/g'
