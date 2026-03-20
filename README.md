@@ -30,37 +30,6 @@
 - **База данных**: SQLite (может быть заменена на PostgreSQL)
 - **Дополнительно**: Werkzeug, WTForms, qrcode, Pillow
 
-## 📁 Структура проекта (основные директории)
-
-svo_support_fund/  
-├── app.py                 
-├── config.py              
-├── models.py              
-├── forms.py               
-├── utils.py               
-├── vite_helpers.py        
-├── admin/                 
-├── auth/                  
-├── public/                
-├── migrations/            
-├── static/               
-│   ├── css/               
-│   ├── img/               
-│   ├── js/src/            
-│   │   ├── admin/         
-│   │   ├── index/          
-│   │   ├── api.js         
-│   │   ├── pagination.js  
-│   │   └── utils.js       
-│   └── dist/                
-├── templates/             
-│   ├── index.html  
-│   └── admin.html  
-├── .env.example           
-├── package.json           
-├── vite.config.js         
-└── README.md  
-
 ## 📡 API Endpoints (основные)
 
 ### Публичные
